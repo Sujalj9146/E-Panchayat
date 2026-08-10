@@ -9,8 +9,7 @@ import {
   GitMerge, 
   ArrowRight, 
   X,
-  Check,
-  FileCheck
+  Check
 } from 'lucide-react';
 import { CITIZENS, SCHEMES, CITIZEN_DOCUMENTS } from '../data/mockData';
 
@@ -418,15 +417,8 @@ export const CitizenManagement: React.FC = () => {
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          {isPending ? (
-                            <div className="flex items-center gap-1.5 justify-end">
-                              <button
-                                onClick={() => handleRejectDoc(doc.id)}
-                                className="p-1 rounded text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-250 transition-colors"
-                                title="Reject Document"
-                              >
-                                <X size={14} />
-                              </button>
+                          <div className="flex items-center gap-1.5 justify-end">
+                            {(isPending || doc.status === 'Rejected') && (
                               <button
                                 onClick={() => handleVerifyDoc(doc.id)}
                                 className="p-1 rounded text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-250 transition-colors"
@@ -434,13 +426,17 @@ export const CitizenManagement: React.FC = () => {
                               >
                                 <Check size={14} />
                               </button>
-                            </div>
-                          ) : (
-                            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 justify-end">
-                              <FileCheck size={12} className="text-emerald-500" />
-                              <span>Audit Complete</span>
-                            </span>
-                          )}
+                            )}
+                            {(isPending || isVerified) && (
+                              <button
+                                onClick={() => handleRejectDoc(doc.id)}
+                                className="p-1 rounded text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-250 transition-colors"
+                                title="Reject Document"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -566,34 +562,35 @@ export const CitizenManagement: React.FC = () => {
 
             {/* Actions Footer inside Modal */}
             <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2.5">
-              {previewDoc.status === 'Pending Verification' ? (
-                <>
-                  <button
-                    onClick={() => {
-                      handleRejectDoc(previewDoc.id);
-                      setPreviewDoc(null);
-                    }}
-                    className="px-3.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-650 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-                  >
-                    Reject Document
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleVerifyDoc(previewDoc.id);
-                      setPreviewDoc(null);
-                    }}
-                    className="px-4 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow"
-                  >
-                    <Check size={14} />
-                    <span>Verify & Save to DB</span>
-                  </button>
-                </>
-              ) : (
+              {(previewDoc.status === 'Pending Verification' || previewDoc.status === 'Verified') && (
+                <button
+                  onClick={() => {
+                    handleRejectDoc(previewDoc.id);
+                    setPreviewDoc(null);
+                  }}
+                  className="px-3.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-650 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                >
+                  Reject Document
+                </button>
+              )}
+              {(previewDoc.status === 'Pending Verification' || previewDoc.status === 'Rejected') && (
+                <button
+                  onClick={() => {
+                    handleVerifyDoc(previewDoc.id);
+                    setPreviewDoc(null);
+                  }}
+                  className="px-4 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow"
+                >
+                  <Check size={14} />
+                  <span>Verify & Save to DB</span>
+                </button>
+              )}
+              {previewDoc.status !== 'Pending Verification' && (
                 <button
                   onClick={() => setPreviewDoc(null)}
                   className="px-4 py-1.5 bg-slate-250 hover:bg-slate-350 text-slate-700 rounded text-xs font-bold transition-colors"
                 >
-                  Close Viewer
+                  Close
                 </button>
               )}
             </div>
