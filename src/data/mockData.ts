@@ -98,8 +98,7 @@ export const SCHEMES: Scheme[] = [
     minAge: 60,
     maxIncome: 100000,
     benefit: '₹1,500 / month',
-    benefitMr: '₹१,५०० / महिना',
-    formUrl: 'https://sanjaygandhiyojana.maharashtra.gov.in'
+    benefitMr: '₹१,५०० / महिना'
   },
   {
     id: 'scheme_pm_awas',
@@ -110,8 +109,7 @@ export const SCHEMES: Scheme[] = [
     minAge: 18,
     maxIncome: 120000,
     benefit: '₹1,20,000 for house construction',
-    benefitMr: 'घर बांधणीसाठी ₹१,२०,०००',
-    formUrl: 'https://pmayg.nic.in'
+    benefitMr: 'घर बांधणीसाठी ₹१,२०,०००'
   },
   {
     id: 'scheme_krishi_sinchan',
@@ -135,8 +133,7 @@ export const SCHEMES: Scheme[] = [
     maxIncome: 80000,
     genderRestriction: 'Female',
     benefit: '₹5,000 / academic year',
-    benefitMr: '₹५,००० / शैक्षणिक वर्ष',
-    formUrl: 'https://myscheme.gov.in'
+    benefitMr: '₹५,००० / शैक्षणिक वर्ष'
   }
 ];
 
