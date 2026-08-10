@@ -12,7 +12,8 @@ import {
   BarChart3, 
   ChevronLeft,
   ChevronRight,
-  Globe
+  Globe,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   role?: 'officer' | 'citizen';
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -28,7 +30,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setCurrentTab, 
   collapsed, 
   setCollapsed,
-  role = 'officer'
+  role = 'officer',
+  onLogout
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -146,16 +149,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </button>
 
-        {/* User Card */}
-        <div className="flex items-center gap-3 p-1.5 overflow-hidden">
-          <div className="w-9 h-9 rounded-full bg-govblue-100 text-govnavy flex items-center justify-center font-bold border border-govblue-200">
-            PO
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col select-none">
-              <span className="text-xs font-bold text-slate-800 leading-tight">Panchayat Officer</span>
-              <span className="text-[10px] text-slate-500 font-medium mt-0.5">Khed Shivapur GP</span>
+        {/* User Card & Logout Button */}
+        <div className="flex items-center justify-between p-1.5 overflow-hidden gap-2">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-govblue-100 text-govnavy flex items-center justify-center font-extrabold border border-govblue-250 flex-shrink-0 text-xs">
+              {role === 'officer' ? 'PO' : 'CT'}
             </div>
+            {!collapsed && (
+              <div className="flex flex-col select-none text-left truncate">
+                <span className="text-xs font-bold text-slate-800 leading-tight block truncate">
+                  {role === 'officer' ? 'Panchayat Officer' : 'Village Citizen'}
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium block truncate">
+                  {role === 'officer' ? 'Khed Shivapur GP' : 'Visitor Mode'}
+                </span>
+              </div>
+            )}
+          </div>
+          {onLogout && (
+            <button 
+              onClick={onLogout}
+              className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-transparent hover:border-rose-100 transition-all flex-shrink-0"
+              title="Sign Out / लॉग आउट"
+            >
+              <LogOut size={16} />
+            </button>
           )}
         </div>
       </div>

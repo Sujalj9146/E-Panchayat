@@ -26,16 +26,18 @@ import { GISMap } from './components/GISMap';
 import { AIAssistant } from './components/AIAssistant';
 import { Analytics } from './components/Analytics';
 import { CitizenPortal } from './components/CitizenPortal';
+import { Login } from './components/Login';
 
 // Import i18n initialization
 import './i18n/i18n';
 
 function App() {
   const { i18n } = useTranslation();
-  const [viewMode, setViewMode] = useState<'landing' | 'dashboard'>('landing');
+  const [viewMode, setViewMode] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [userRole, setUserRole] = useState<'officer' | 'citizen'>('officer');
+  const [loginUser, setLoginUser] = useState('');
 
   const toggleLanguage = () => {
     const nextLang = i18n.language === 'en' ? 'mr' : 'en';
@@ -135,7 +137,10 @@ function App() {
               </button>
               
               <button
-                onClick={() => setViewMode('dashboard')}
+                onClick={() => {
+                  setUserRole('officer');
+                  setViewMode('login');
+                }}
                 className="px-4 py-2 rounded-lg bg-govnavy hover:bg-govblue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors shadow-md"
               >
                 <span>Explore Dashboard</span>
@@ -166,8 +171,9 @@ function App() {
               <div className="flex flex-wrap gap-4 pt-2">
                 <button
                   onClick={() => {
+                    setUserRole('officer');
                     setCurrentTab('dashboard');
-                    setViewMode('dashboard');
+                    setViewMode('login');
                   }}
                   className="px-6 py-3 rounded-lg bg-govnavy hover:bg-govblue-700 text-white font-bold text-sm flex items-center gap-2 transition-all shadow-lg hover:translate-y-[-1px]"
                 >
@@ -176,8 +182,9 @@ function App() {
                 </button>
                 <button
                   onClick={() => {
+                    setUserRole('citizen');
                     setCurrentTab('ai_assistant');
-                    setViewMode('dashboard');
+                    setViewMode('login');
                   }}
                   className="px-6 py-3 rounded-lg bg-white border border-govsaffron text-govsaffron hover:bg-orange-50/50 font-bold text-sm flex items-center gap-2 transition-all"
                 >
@@ -307,6 +314,17 @@ function App() {
         </div>
       )}
 
+      {/* 2. SECURE LOGIN VIEW */}
+      {viewMode === 'login' && (
+        <Login 
+          onLoginSuccess={(role, username) => {
+            setUserRole(role);
+            setLoginUser(username);
+            setViewMode('dashboard');
+          }}
+        />
+      )}
+
       {/* 2. DASHBOARD VIEW WITH SIDEBAR */}
       {viewMode === 'dashboard' && (
         <div className="flex min-h-screen bg-slate-50">
@@ -316,6 +334,11 @@ function App() {
             collapsed={sidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
             role={userRole}
+            onLogout={() => {
+              setViewMode('landing');
+              setUserRole('officer');
+              setLoginUser('');
+            }}
           />
           
           <div className="flex-1 flex flex-col min-w-0">
@@ -326,26 +349,22 @@ function App() {
                 <span className="text-xs font-extrabold text-govblue-900 uppercase">Khed Shivapur Gram Panchayat Portal</span>
                 <span className="bg-govgreen/10 text-govgreen text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase border border-govgreen/20">Active Session</span>
                 <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                  <span className="text-[10px] font-bold text-slate-500">PORTAL VIEW:</span>
-                  <select
-                    value={userRole}
-                    onChange={(e) => {
-                      setUserRole(e.target.value as any);
-                      setCurrentTab('dashboard'); // Reset default view
-                    }}
-                    className="bg-slate-50 border border-slate-200 text-xs font-bold text-govblue-900 rounded px-2 py-0.5 focus:outline-none cursor-pointer"
-                  >
-                    <option value="officer">Panchayat Officer 👤</option>
-                    <option value="citizen">Public Citizen 👥</option>
-                  </select>
+                  <span className="text-[10px] font-bold text-slate-500">ACTIVE ROLE:</span>
+                  <span className="text-xs font-black text-govnavy uppercase bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                    {userRole === 'officer' ? 'Panchayat Officer 👤' : `Citizen (${loginUser}) 👥`}
+                  </span>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setViewMode('landing')}
+                  onClick={() => {
+                    setViewMode('landing');
+                    setUserRole('officer');
+                    setLoginUser('');
+                  }}
                   className="text-xs font-bold text-govsaffron hover:text-orange-600 transition-colors"
                 >
-                  ← Exit Portal
+                  ← Sign Out
                 </button>
               </div>
             </header>
