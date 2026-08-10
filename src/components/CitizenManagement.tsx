@@ -97,7 +97,11 @@ export const CitizenManagement: React.FC = () => {
       {/* Title */}
       <div>
         <h1 className="text-2xl font-bold text-white tracking-wide m-0">{t('citizens.title')}</h1>
-        <p className="text-xs text-slate-500 mt-1">Search official databases, visualize family relations, and audit uploaded citizen records.</p>
+        <p className="text-xs text-slate-500 mt-1">
+          {i18n.language === 'en' 
+            ? 'Search official databases, visualize family relations, and audit uploaded citizen records.' 
+            : 'अधिकृत डेटाबेस शोधा, कौटुंबिक संबंध पहा आणि अपलोड केलेल्या कागदपत्रांचे पुनरावलोकन करा.'}
+        </p>
       </div>
 
       {/* Sub-tab navigation */}
@@ -110,7 +114,7 @@ export const CitizenManagement: React.FC = () => {
               : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          👥 Citizen Directory
+          👥 {i18n.language === 'en' ? 'Citizen Directory' : 'नागरिक मार्गदर्शिका'}
         </button>
         <button
           onClick={() => setActiveSubTab('verification')}
@@ -120,7 +124,7 @@ export const CitizenManagement: React.FC = () => {
               : 'text-slate-500 hover:text-slate-300'
           }`}
         >
-          <span>📂 Document Verification Queue</span>
+          <span>📂 {i18n.language === 'en' ? 'Document Verification Queue' : 'दस्तऐवज पडताळणी रांग'}</span>
           {docList.some(d => d.status === 'Pending Verification') && (
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
           )}
@@ -366,25 +370,25 @@ export const CitizenManagement: React.FC = () => {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-t-4 border-govnavy">
           <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
             <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-              {docList.filter(d => d.status === 'Pending Verification').length} Pending Documents for Audit
+              {docList.filter(d => d.status === 'Pending Verification').length} {i18n.language === 'en' ? 'Pending Documents for Audit' : 'पडताळणी प्रलंबित दस्तऐवज'}
             </span>
           </div>
 
           <div className="overflow-x-auto">
             {docList.length === 0 ? (
               <div className="p-10 text-center text-slate-400 text-xs">
-                No documents uploaded in verification queue yet.
+                {i18n.language === 'en' ? 'No documents uploaded in verification queue yet.' : 'पडताळणी रांगेत अद्याप कोणतेही दस्तऐवज उपलब्ध नाहीत.'}
               </div>
             ) : (
               <table className="w-full text-left text-xs sm:text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold select-none">
-                    <th className="p-4">Citizen Name</th>
-                    <th className="p-4">Document Type</th>
-                    <th className="p-4">Attached File</th>
-                    <th className="p-4">Submitted Date</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Audit Actions</th>
+                    <th className="p-4">{i18n.language === 'en' ? 'Citizen Name' : 'नागरिकाचे नाव'}</th>
+                    <th className="p-4">{i18n.language === 'en' ? 'Document Type' : 'दस्तऐवज प्रकार'}</th>
+                    <th className="p-4">{i18n.language === 'en' ? 'Attached File' : 'संलग्न फाईल'}</th>
+                    <th className="p-4">{i18n.language === 'en' ? 'Submitted Date' : 'सादर दिनांक'}</th>
+                    <th className="p-4">{i18n.language === 'en' ? 'Status' : 'स्थिती'}</th>
+                    <th className="p-4 text-right">{i18n.language === 'en' ? 'Audit Actions' : 'कृती'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -422,7 +426,7 @@ export const CitizenManagement: React.FC = () => {
                               <button
                                 onClick={() => handleVerifyDoc(doc.id)}
                                 className="p-1 rounded text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-250 transition-colors"
-                                title="Verify & Save to Database"
+                                title={i18n.language === "en" ? "Verify & Save to Database" : "पडताळणी करा"}
                               >
                                 <Check size={14} />
                               </button>
@@ -431,7 +435,7 @@ export const CitizenManagement: React.FC = () => {
                               <button
                                 onClick={() => handleRejectDoc(doc.id)}
                                 className="p-1 rounded text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-250 transition-colors"
-                                title="Reject Document"
+                                title={i18n.language === "en" ? "Reject Document" : "दस्तऐवज नाकारा"}
                               >
                                 <X size={14} />
                               </button>
@@ -456,8 +460,12 @@ export const CitizenManagement: React.FC = () => {
             {/* Header */}
             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
               <div>
-                <strong className="text-xs font-bold text-govblue-900 block uppercase">Document Auditor</strong>
-                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Audit: {previewDoc.fileName}</span>
+                <strong className="text-xs font-bold text-govblue-900 block uppercase">
+                  {i18n.language === 'en' ? 'Document Auditor' : 'दस्तऐवज पडताळणी / ऑडिट'}
+                </strong>
+                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                  {i18n.language === 'en' ? 'Audit' : 'तपासणी'}: {previewDoc.fileName}
+                </span>
               </div>
               <button 
                 onClick={() => setPreviewDoc(null)}
@@ -476,28 +484,40 @@ export const CitizenManagement: React.FC = () => {
                     PUNE
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Department of Revenue • Government of Maharashtra</span>
-                    <h4 className="text-[10px] font-black text-amber-900 uppercase tracking-widest border-b border-amber-800 pb-1 m-0">INCOME CERTIFICATE</h4>
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">{i18n.language === 'en' ? 'Department of Revenue • Government of Maharashtra' : 'महसूल विभाग • महाराष्ट्र शासन'}</span>
+                    <h4 className="text-[10px] font-black text-amber-900 uppercase tracking-widest border-b border-amber-800 pb-1 m-0">{i18n.language === 'en' ? 'INCOME CERTIFICATE' : 'उत्पन्नाचा दाखला'}</h4>
                   </div>
                   <div className="text-left text-[8px] font-bold text-slate-700 space-y-2 py-4">
                     <p className="leading-normal">
-                      This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {previewCitizenProfile.ward}, Khed Shivapur, Pune, Maharashtra, has an annual family income of:
+                      {i18n.language === 'en' ? (
+                        <>This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {previewCitizenProfile.ward}, Khed Shivapur, Pune, Maharashtra, has an annual family income of:</>
+                      ) : (
+                        <>प्रमाणित करण्यात येते की, <strong className="text-slate-900">{previewDoc.citizenName}</strong>, रा. वॉर्ड {previewCitizenProfile.ward}, खेड शिवापूर, हवेली, पुणे, महाराष्ट्र, यांचे एकूण कौटुंबिक वार्षिक उत्पन्न खालीलप्रमाणे आहे:</>
+                      )}
                     </p>
                     <div className="text-center py-2.5 bg-amber-50 border border-dashed border-amber-800/40 rounded">
                       <strong className="text-sm font-black text-emerald-750">₹{previewCitizenProfile.income.toLocaleString()}/-</strong>
-                      <span className="block text-[7px] text-slate-400 mt-0.5">Rupees {previewCitizenProfile.income === 45000 ? 'Forty Five Thousand Only' : 'Sixty Thousand Only'}</span>
+                      <span className="block text-[7px] text-slate-400 mt-0.5">
+                        {previewCitizenProfile.income === 45000 
+                          ? (i18n.language === 'en' ? 'Rupees Forty Five Thousand Only' : 'अक्षरी रुपये पंचेचाळीस हजार फक्त') 
+                          : (i18n.language === 'en' ? 'Rupees Sixty Thousand Only' : 'अक्षरी रुपये साठ हजार फक्त')}
+                      </span>
                     </div>
                     <p className="leading-normal">
-                      This certificate is issued on the basis of local talathi report for the Assessment Year 2025-26.
+                      {i18n.language === 'en' 
+                        ? 'This certificate is issued on the basis of local talathi report for the Assessment Year 2025-26.' 
+                        : 'सदर प्रमाणपत्र स्थानिक तलाठी अहवालाच्या आधारे मूल्यांकन वर्ष २०२५-२६ साठी जारी करण्यात आले आहे.'}
                     </p>
                   </div>
                   <div className="flex items-end justify-between text-[7px] font-bold text-slate-500">
                     <div className="text-left">
-                      <span>Place: Haveli, Pune</span>
-                      <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
+                      <span>{i18n.language === 'en' ? 'Place: Haveli, Pune' : 'ठिकाण: हवेली, पुणे'}</span>
+                      <span className="block mt-0.5">{i18n.language === 'en' ? 'Date' : 'दिनांक'}: {previewDoc.submittedDate}</span>
                     </div>
                     <div className="text-center font-mono">
-                      <span className="border-t border-slate-300 block pt-0.5 px-2">Tahsildar Desk</span>
+                      <span className="border-t border-slate-300 block pt-0.5 px-2">
+                        {i18n.language === 'en' ? 'Tahsildar Desk' : 'तहसीलदार कार्यालय'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -505,7 +525,7 @@ export const CitizenManagement: React.FC = () => {
                 /* Aadhaar Card Graphic */
                 <div className="bg-white border-2 border-red-500 p-4 rounded-lg w-full max-w-[320px] aspect-[1.58/1] flex flex-col justify-between select-none shadow-sm relative overflow-hidden border-t-govnavy">
                   <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
-                    <span className="text-[8px] font-extrabold text-red-600">भारत सरकार / Govt of India</span>
+                    <span className="text-[8px] font-extrabold text-red-600">{i18n.language === 'en' ? 'Government of India' : 'भारत सरकार / Govt of India'}</span>
                     <span className="text-[9px]">🇮🇳</span>
                   </div>
                   <div className="flex gap-3 py-2 flex-1">
@@ -527,33 +547,35 @@ export const CitizenManagement: React.FC = () => {
                 /* Land Extract 7/12 Graphic */
                 <div className="bg-white border-2 border-emerald-800 p-5 rounded w-full max-w-[320px] aspect-[1/1.4] flex flex-col justify-between text-center select-none shadow-sm relative overflow-hidden">
                   <div className="space-y-1">
-                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Land Records Department • Government of Maharashtra</span>
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">{i18n.language === 'en' ? 'Land Records Department • Government of Maharashtra' : 'भूमी अभिलेख विभाग • महाराष्ट्र शासन'}</span>
                     <h4 className="text-[9px] font-black text-emerald-950 uppercase tracking-widest border-b border-emerald-800 pb-1 m-0">गाव नमुना ७ (अधिकार अभिलेख पत्रक) / FORM VII-XII</h4>
                   </div>
                   <div className="text-left text-[7px] font-bold text-slate-755 space-y-2 py-3">
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-b border-slate-200 pb-1 text-slate-700">
-                      <span>District: Pune</span>
-                      <span>Taluka: Haveli</span>
-                      <span>Village: Khed Shivapur</span>
-                      <span>Survey No: 184/A</span>
+                      <span>{i18n.language === 'en' ? 'District: Pune' : 'जिल्हा: पुणे'}</span>
+                      <span>{i18n.language === 'en' ? 'Taluka: Haveli' : 'तालुका: हवेली'}</span>
+                      <span>{i18n.language === 'en' ? 'Village: Khed Shivapur' : 'गाव: खेड शिवापूर'}</span>
+                      <span>{i18n.language === 'en' ? 'Survey No: 184/A' : 'गट क्र: १८४/अ'}</span>
                     </div>
                     <p className="leading-normal">
-                      <strong>Bhudar/Owner Name:</strong> {previewDoc.citizenName}
+                      <strong>{i18n.language === 'en' ? 'Owner Name' : 'खातेदाराचे नाव'}:</strong> {previewDoc.citizenName}
                     </p>
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
-                      <span>Total Area: 1.25 Hectares</span>
-                      <span>Land Class: Jirayat (Dry crop)</span>
-                      <span>Tax Assessment: ₹14.50</span>
-                      <span>Status: Clear (No liabilities)</span>
+                      <span>{i18n.language === 'en' ? 'Total Area: 1.25 Hectares' : 'एकूण क्षेत्र: १.२५ हेक्टर'}</span>
+                      <span>{i18n.language === 'en' ? 'Land Class: Jirayat' : 'भूमी वर्ग: जिरायत (कोरडवाहू)'}</span>
+                      <span>{i18n.language === 'en' ? 'Tax: ₹14.50' : 'आकारणी: ₹१४.५०'}</span>
+                      <span>{i18n.language === 'en' ? 'Status: Clear' : 'इतर हक्क: निरंक (बोजा नाही)'}</span>
                     </div>
                   </div>
                   <div className="flex items-end justify-between text-[7px] font-bold text-slate-500 mt-2">
                     <div className="text-left">
-                      <span>Verifier ID: Haveli-LRC-876</span>
-                      <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
+                      <span>{i18n.language === 'en' ? 'Verifier ID: Haveli-LRC-876' : 'पडताळणी अधिकारी: हवेली-LRC-८७६'}</span>
+                      <span className="block mt-0.5">{i18n.language === 'en' ? 'Date' : 'दिनांक'}: {previewDoc.submittedDate}</span>
                     </div>
                     <div className="text-center font-mono">
-                      <span className="border-t border-slate-300 block pt-0.5 px-2">Land Inspector Desk</span>
+                      <span className="border-t border-slate-300 block pt-0.5 px-2">
+                        {i18n.language === 'en' ? 'Land Inspector Desk' : 'भूमी निरीक्षक कार्यालय'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -570,7 +592,7 @@ export const CitizenManagement: React.FC = () => {
                   }}
                   className="px-3.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-650 hover:bg-rose-50 hover:text-rose-600 transition-colors"
                 >
-                  Reject Document
+                  {i18n.language === 'en' ? 'Reject Document' : 'दस्तऐवज नाकारा'}
                 </button>
               )}
               {(previewDoc.status === 'Pending Verification' || previewDoc.status === 'Rejected') && (
@@ -582,7 +604,7 @@ export const CitizenManagement: React.FC = () => {
                   className="px-4 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow"
                 >
                   <Check size={14} />
-                  <span>Verify & Save to DB</span>
+                  <span>{i18n.language === 'en' ? 'Verify & Save to DB' : 'पडताळणी पूर्ण करा'}</span>
                 </button>
               )}
               {previewDoc.status !== 'Pending Verification' && (
@@ -590,7 +612,7 @@ export const CitizenManagement: React.FC = () => {
                   onClick={() => setPreviewDoc(null)}
                   className="px-4 py-1.5 bg-slate-250 hover:bg-slate-350 text-slate-700 rounded text-xs font-bold transition-colors"
                 >
-                  Close
+                  {i18n.language === 'en' ? 'Close' : 'बंद करा'}
                 </button>
               )}
             </div>

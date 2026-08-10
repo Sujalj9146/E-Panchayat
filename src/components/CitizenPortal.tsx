@@ -286,42 +286,42 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
               <Building size={14} className="text-govnavy" />
-              <span>Village Public Information Board</span>
+              <span>{i18n.language === 'en' ? 'Village Public Information Board' : 'ग्राम सार्वजनिक माहिती फलक'}</span>
             </h2>
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-50 rounded border border-slate-200 flex items-start gap-3">
                 <Calendar className="text-govsaffron flex-shrink-0" size={16} />
                 <div>
-                  <strong className="text-slate-800 block">Upcoming Gram Sabha Meeting</strong>
-                  <span className="text-slate-500 block mt-0.5">Date: 20 Aug 2026 • Time: 11:00 AM • Venue: ZP School Ground</span>
+                  <strong className="text-slate-800 block">{i18n.language === 'en' ? 'Upcoming Gram Sabha Meeting' : 'आगामी ग्रामसभा बैठक'}</strong>
+                  <span className="text-slate-500 block mt-0.5">{i18n.language === 'en' ? 'Date: 20 Aug 2026 • Time: 11:00 AM • Venue: ZP School Ground' : 'तारीख: २० ऑगस्ट २०२६ • वेळ: सकाळी ११:०० • ठिकाण: जि. प. शाळा मैदान'}</span>
                 </div>
               </div>
 
               <div className="p-3 bg-slate-50 rounded border border-slate-200 flex items-start gap-3">
                 <MapPin className="text-govnavy flex-shrink-0" size={16} />
                 <div>
-                  <strong className="text-slate-800 block">Digital Certificate Camp</strong>
-                  <span className="text-slate-500 block mt-0.5">Apply for income and caste proofs directly this week at Ward 2 Kiosk.</span>
+                  <strong className="text-slate-800 block">{i18n.language === 'en' ? 'Digital Certificate Camp' : 'डिजिटल प्रमाणपत्र शिबिर'}</strong>
+                  <span className="text-slate-500 block mt-0.5">{i18n.language === 'en' ? 'Apply for income and caste proofs directly this week at Ward 2 Kiosk.' : 'या आठवड्यात वॉर्ड २ मधील केंद्रावर थेट उत्पन्न आणि जातीच्या दाखल्यांसाठी अर्ज करा.'}</span>
                 </div>
               </div>
             </div>
 
             {/* Official Directory */}
             <div className="space-y-2 pt-2">
-              <h3 className="text-xs font-bold text-slate-700">Official Panchayat Contacts</h3>
+              <h3 className="text-xs font-bold text-slate-700">{i18n.language === 'en' ? 'Official Panchayat Contacts' : 'अधिकृत पंचायत संपर्क यादी'}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 rounded bg-slate-50 border border-slate-150 flex items-center gap-2">
                   <Phone size={12} className="text-govgreen" />
                   <div>
-                    <span className="text-slate-800 font-semibold block">Gram Sevak (Village Officer)</span>
+                    <span className="text-slate-800 font-semibold block">{i18n.language === 'en' ? 'Gram Sevak (Village Officer)' : 'ग्रामसेवक (ग्राम अधिकारी)'}</span>
                     <span className="text-[10px] text-slate-500 font-mono">+91 98450 12345</span>
                   </div>
                 </div>
                 <div className="p-2.5 rounded bg-slate-50 border border-slate-150 flex items-center gap-2">
                   <Phone size={12} className="text-govgreen" />
                   <div>
-                    <span className="text-slate-800 font-semibold block">Sarpanch (Village Head)</span>
+                    <span className="text-slate-800 font-semibold block">{i18n.language === 'en' ? 'Sarpanch (Village Head)' : 'सरपंच (गाव प्रमुख)'}</span>
                     <span className="text-[10px] text-slate-500 font-mono">+91 98450 54321</span>
                   </div>
                 </div>
@@ -332,9 +332,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
           {/* Core actions entry card */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between">
             <div className="space-y-4">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Available Actions</h2>
+              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">{i18n.language === 'en' ? 'Available Actions' : 'उपलब्ध सेवा/कृती'}</h2>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Use our digital services to verify your scheme qualification, file complaints about local infrastructure leaks/potholes, or ask our chatbot general questions about panchayat operations.
+                {i18n.language === 'en' 
+                  ? 'Use our digital services to verify your scheme qualification, file complaints about local infrastructure leaks/potholes, or ask our chatbot general questions about panchayat operations.'
+                  : 'तुमची योजना पात्रता तपासण्यासाठी, स्थानिक पायाभूत सुविधांच्या गळती/खड्ड्यांबद्दल तक्रारी नोंदवण्यासाठी किंवा आमच्या चॅटबॉटला पंचायतीच्या कामकाजाबद्दल सामान्य प्रश्न विचारण्यासाठी आमच्या डिजिटल सेवांचा वापर करा.'}
               </p>
             </div>
             
@@ -344,28 +346,28 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 className="p-2.5 bg-govblue-50 border border-govblue-200 hover:bg-govblue-100 text-govnavy rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
                 <Award size={16} className="mx-auto text-govnavy" />
-                <span className="block text-[9px]">Welfare Schemes</span>
+                <span className="block text-[9px]">{i18n.language === 'en' ? 'Welfare Schemes' : 'कल्याणकारी योजना'}</span>
               </button>
               <button 
                 onClick={() => setCurrentTab('grievances')}
                 className="p-2.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
                 <Plus size={16} className="mx-auto text-rose-600" />
-                <span className="block text-[9px]">File Grievance</span>
+                <span className="block text-[9px]">{i18n.language === 'en' ? 'File Grievance' : 'तक्रार नोंदवा'}</span>
               </button>
               <button 
                 onClick={() => setCurrentTab('documents')}
                 className="p-2.5 bg-emerald-50 border border-emerald-250 hover:bg-emerald-100 text-govgreen rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
                 <FolderOpen size={16} className="mx-auto text-govgreen" />
-                <span className="block text-[9px]">Digital Locker</span>
+                <span className="block text-[9px]">{i18n.language === 'en' ? 'Digital Locker' : 'डिजिटल लॉकर'}</span>
               </button>
               <button 
                 onClick={() => setCurrentTab('ai_assistant')}
                 className="p-2.5 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-govsaffron rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
                 <Bot size={16} className="mx-auto text-govsaffron" />
-                <span className="block text-[9px]">AI Helpdesk</span>
+                <span className="block text-[9px]">{i18n.language === 'en' ? 'AI Helpdesk' : 'एआय मदतनीस'}</span>
               </button>
             </div>
           </div>
@@ -377,11 +379,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Eligibility Input Form */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Scheme Eligibility Calculator</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">{i18n.language === 'en' ? 'Scheme Eligibility Calculator' : 'योजना पात्रता कॅल्क्युलेटर'}</h2>
             
             <form onSubmit={handleCheckEligibility} className="space-y-4 text-xs font-semibold">
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Enter Age / वय</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Enter Age / वय' : 'वय प्रविष्ट करा / वय'}</label>
                 <input
                   type="number"
                   value={ageInput}
@@ -391,7 +393,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Annual Income (₹) / उत्पन्न</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Annual Income (₹) / उत्पन्न' : 'वार्षिक उत्पन्न (₹) / उत्पन्न'}</label>
                 <input
                   type="number"
                   value={incomeInput}
@@ -401,14 +403,14 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Gender / लिंग</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Gender / लिंग' : 'लिंग / लिंग'}</label>
                 <select
                   value={genderInput}
                   onChange={(e) => setGenderInput(e.target.value as any)}
                   className="w-full px-3 py-2 border border-slate-200 rounded"
                 >
-                  <option value="Male">Male / पुरुष</option>
-                  <option value="Female">Female / महिला</option>
+                  <option value="Male">{i18n.language === 'en' ? 'Male / पुरुष' : 'पुरुष'}</option>
+                  <option value="Female">{i18n.language === 'en' ? 'Female / महिला' : 'महिला'}</option>
                 </select>
               </div>
 
@@ -420,29 +422,35 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   onChange={(e) => setFarmerInput(e.target.checked)}
                   className="rounded text-govnavy"
                 />
-                <label htmlFor="farmer_check" className="text-slate-650 cursor-pointer">I am a Registered Farmer / मी शेतकरी आहे</label>
+                <label htmlFor="farmer_check" className="text-slate-650 cursor-pointer">
+                  {i18n.language === 'en' ? 'I am a Registered Farmer / मी शेतकरी आहे' : 'मी नोंदणीकृत शेतकरी आहे'}
+                </label>
               </div>
 
               <button
                 type="submit"
                 className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white font-bold transition-all shadow"
               >
-                Check Qualifying Schemes
+                {i18n.language === 'en' ? 'Check Qualifying Schemes' : 'पात्र योजना तपासा'}
               </button>
             </form>
           </div>
 
           {/* Results List with Detailed Disqualifications & Application Form info */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Matching Welfare Subsidies & Apply Locations</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {i18n.language === 'en' ? 'Matching Welfare Subsidies & Apply Locations' : 'पात्र कल्याणकारी योजना आणि अर्ज करण्याचे ठिकाण'}
+            </h2>
             
             {!checked ? (
               <div className="p-10 text-center text-slate-400 text-xs">
-                Fill out the eligibility profile on the left and submit to view your matching government benefits.
+                {i18n.language === 'en' 
+                  ? 'Fill out the eligibility profile on the left and submit to view your matching government benefits.'
+                  : 'पात्र योजना पाहण्यासाठी डाव्या बाजूला माहिती प्रविष्ट करा आणि तपासा.'}
               </div>
             ) : eligibleSchemesList.length === 0 ? (
               <div className="p-10 text-center text-slate-500 text-xs font-medium">
-                No schemes matches found for this profile.
+                {i18n.language === 'en' ? 'No schemes matches found for this profile.' : 'या पात्रता तपशीलासाठी कोणतीही योजना आढळली नाही.'}
               </div>
             ) : (
               <div className="space-y-4">
@@ -474,7 +482,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           </p>
                         </div>
                         <div className="text-left sm:text-right flex-shrink-0">
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Estimated Benefit</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                            {i18n.language === 'en' ? 'Estimated Benefit' : 'अंदाजित लाभ'}
+                          </span>
                           <strong className="text-xs font-black text-govgreen block mt-0.5">
                             {i18n.language === 'en' ? scheme.benefit : scheme.benefitMr}
                           </strong>
@@ -532,43 +542,45 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* File Grievance Form */}
           <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Submit New Complaint</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {i18n.language === 'en' ? 'Submit New Complaint' : 'नवीन तक्रार नोंदणी'}
+            </h2>
             
             <form onSubmit={handleCitizenSubmitGrievance} className="space-y-4 text-xs font-semibold">
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Complaint Subject / शीर्षक</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Complaint Subject / शीर्षक' : 'तक्रारीचे शीर्षक / विषय'}</label>
                 <input
                   type="text"
                   required
                   value={grvTitle}
                   onChange={(e) => setGrvTitle(e.target.value)}
-                  placeholder="e.g. Water pipeline leak near Maruti temple"
+                  placeholder={i18n.language === 'en' ? 'e.g. Water pipeline leak near Maruti temple' : 'उदा. मारुती मंदिराजवळ पाण्याची पाईपलाईन गळती'}
                   className="w-full px-3 py-2 border border-slate-200 rounded"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Ward Location / वॉर्ड</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Ward Location / वॉर्ड' : 'तक्रार वॉर्ड निवडा'}</label>
                 <select
                   value={grvWard}
                   onChange={(e) => setGrvWard(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-slate-200 rounded"
                 >
-                  <option value={1}>Ward 1</option>
-                  <option value={2}>Ward 2</option>
-                  <option value={3}>Ward 3</option>
-                  <option value={4}>Ward 4</option>
+                  <option value={1}>{i18n.language === 'en' ? 'Ward 1' : 'वॉर्ड १'}</option>
+                  <option value={2}>{i18n.language === 'en' ? 'Ward 2' : 'वॉर्ड २'}</option>
+                  <option value={3}>{i18n.language === 'en' ? 'Ward 3' : 'वॉर्ड ३'}</option>
+                  <option value={4}>{i18n.language === 'en' ? 'Ward 4' : 'वॉर्ड ४'}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Detail Description / तक्रारीचे वर्णन</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Detail Description / तक्रारीचे वर्णन' : 'तपशीलवार वर्णन / तक्रारीचा मजकूर'}</label>
                 <textarea
                   required
                   rows={4}
                   value={grvDesc}
                   onChange={(e) => setGrvDesc(e.target.value)}
-                  placeholder="Provide complete details about the damage, leak, or issue. The AI model will auto-route it to the corresponding cell."
+                  placeholder={i18n.language === 'en' ? 'Provide complete details about the damage, leak, or issue. The AI model will auto-route it to the corresponding cell.' : 'नुकसान, गळती किंवा समस्येबद्दल संपूर्ण माहिती द्या. आमचे AI मॉडेल संबंधित विभागाकडे वर्ग करेल.'}
                   className="w-full px-3 py-2 border border-slate-200 rounded"
                 />
               </div>
@@ -578,14 +590,16 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white rounded font-bold transition-all shadow flex items-center justify-center gap-1"
               >
                 <Sparkles size={12} className="text-govsaffron animate-pulse" />
-                <span>Submit Complaint (AI Auto-Categorize)</span>
+                <span>{i18n.language === 'en' ? 'Submit Complaint (AI Auto-Categorize)' : 'तक्रार नोंदवा (AI स्वयंचलित वर्गीकरण)'}</span>
               </button>
             </form>
           </div>
 
           {/* Grievances List & Tracker */}
           <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Track Submitted Grievances</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {i18n.language === 'en' ? 'Track Submitted Grievances' : 'तुमच्या तक्रारीचा मागोवा घ्या'}
+            </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {/* List */}
@@ -606,8 +620,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         {i18n.language === 'en' ? g.title : g.titleMr}
                       </strong>
                       <div className="flex items-center justify-between text-[9px] text-slate-500">
-                        <span>Date: {g.submittedDate}</span>
-                        <span className="font-bold uppercase tracking-wider text-govsaffron">{g.status}</span>
+                        <span>{i18n.language === 'en' ? 'Date' : 'तारीख'}: {g.submittedDate}</span>
+                        <span className="font-bold uppercase tracking-wider text-govsaffron">
+                          {i18n.language === 'en' ? g.status : g.statusMr}
+                        </span>
                       </div>
                     </button>
                   );
@@ -621,7 +637,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                     <div className="border-b border-slate-200 pb-2">
                       <strong className="text-xs text-govblue-900 block">ID: {activeGrievance.id}</strong>
                       <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
-                        Category: {activeGrievance.category} • Ward {activeGrievance.ward}
+                        {i18n.language === 'en' ? 'Category' : 'वर्ग'}: {activeGrievance.category} • {i18n.language === 'en' ? 'Ward' : 'वॉर्ड'} {activeGrievance.ward}
                       </span>
                     </div>
 
@@ -631,7 +647,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                       <div className="relative">
                         <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-govgreen border-2 border-white"></div>
                         <span className="text-slate-800 block font-bold">Complaint Logged / तक्रार नोंदवली</span>
-                        <span className="text-[9px] text-slate-400 block mt-0.5">Date: {activeGrievance.submittedDate}</span>
+                        <span className="text-[9px] text-slate-400 block mt-0.5">{i18n.language === 'en' ? 'Date' : 'तारीख'}: {activeGrievance.submittedDate}</span>
                       </div>
 
                       {/* Step 2 */}
@@ -664,7 +680,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   </div>
                 ) : (
                   <div className="p-8 text-center text-slate-400 text-xs">
-                    Select a complaint from the list to view its tracking timeline and routed department.
+                    {i18n.language === 'en' 
+                      ? 'Select a complaint from the list to view its tracking timeline and routed department.'
+                      : 'तक्रारीचा मागोवा आणि नियुक्त विभाग पाहण्यासाठी यादीतून तक्रार निवडा.'}
                   </div>
                 )}
               </div>
@@ -678,31 +696,33 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Upload Document Form */}
           <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Upload Document for Verification</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {i18n.language === 'en' ? 'Upload Document for Verification' : 'पडताळणीसाठी दस्तऐवज अपलोड करा'}
+            </h2>
             
             {uploadSuccess && (
               <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded text-xs font-bold flex items-center gap-1.5 animate-pulse">
                 <Check size={14} />
-                <span>Uploaded! Awaiting officer audit.</span>
+                <span>{i18n.language === 'en' ? 'Uploaded! Awaiting officer audit.' : 'यशस्वीरीत्या अपलोड झाले! अधिकाऱ्यांच्या पडताळणीची प्रतीक्षा आहे.'}</span>
               </div>
             )}
 
             <form onSubmit={handleDocUpload} className="space-y-4 text-xs font-semibold">
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Select Document Type / दस्तऐवजाचा प्रकार</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Select Document Type / दस्तऐवजाचा प्रकार' : 'दस्तऐवजाचा प्रकार निवडा'}</label>
                 <select
                   value={docTypeInput}
                   onChange={(e) => setDocTypeInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded"
+                  className="w-full px-3 py-2 border border-slate-200 rounded text-slate-700 bg-white"
                 >
-                  <option value="Income Certificate">Income Certificate / उत्पन्नाचा दाखला</option>
-                  <option value="Aadhaar Card">Aadhaar Card / आधार कार्ड</option>
-                  <option value="Land ownership 7/12 Extract">Land ownership 7/12 Extract / ७/१२ उतारा</option>
+                  <option value="Income Certificate">{i18n.language === 'en' ? 'Income Certificate / उत्पन्नाचा दाखला' : 'उत्पन्नाचा दाखला'}</option>
+                  <option value="Aadhaar Card">{i18n.language === 'en' ? 'Aadhaar Card / आधार कार्ड' : 'आधार कार्ड'}</option>
+                  <option value="Land ownership 7/12 Extract">{i18n.language === 'en' ? 'Land ownership 7/12 Extract / ७/१२ उतारा' : '७/१२ उतारा'}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Select Document File / फाईल निवडा</label>
+                <label className="text-slate-500 block">{i18n.language === 'en' ? 'Select Document File / फाईल निवडा' : 'फाईल निवडा'}</label>
                 <input
                   type="file"
                   required
@@ -721,14 +741,16 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white rounded font-bold transition-all shadow flex items-center justify-center gap-1.5"
               >
                 <FolderOpen size={14} />
-                <span>Upload to Panchayat Database</span>
+                <span>{i18n.language === 'en' ? 'Upload to Panchayat Database' : 'पंचायतीच्या डेटाबेसमध्ये अपलोड करा'}</span>
               </button>
             </form>
           </div>
 
           {/* Uploaded Documents List */}
           <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Digital Locker & Verification Status</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {i18n.language === 'en' ? 'Digital Locker & Verification Status' : 'डिजिटल लॉकर आणि पडताळणी स्थिती'}
+            </h2>
             
             <div className="space-y-3">
               {filteredDocs.map((doc) => {
@@ -755,7 +777,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                           {i18n.language === 'en' ? doc.docType : doc.docTypeMr}
                         </strong>
                         <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-                          File: {doc.fileName} • Date: {doc.submittedDate}
+                          File: {doc.fileName} • {i18n.language === 'en' ? 'Date' : 'तारीख'}: {doc.submittedDate}
                         </span>
                       </div>
                     </div>
@@ -768,7 +790,11 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                             ? 'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
                             : 'bg-rose-50 text-rose-600 border-rose-200'
                       }`}>
-                        {isVerified ? 'Verified & Stored' : isPending ? 'Pending Audit' : 'Rejected'}
+                        {isVerified 
+                          ? (i18n.language === 'en' ? 'Verified & Stored' : 'पडताळणी पूर्ण') 
+                          : isPending 
+                            ? (i18n.language === 'en' ? 'Pending Audit' : 'पडताळणी प्रलंबित') 
+                            : (i18n.language === 'en' ? 'Rejected' : 'अस्वीकृत')}
                       </span>
                     </div>
                   </div>
@@ -789,8 +815,12 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 <Bot size={18} />
               </div>
               <div>
-                <strong className="text-xs font-bold text-govblue-900 block">Village Citizen Helpdesk AI</strong>
-                <span className="text-[9px] text-slate-400 font-semibold block">Ask about Certificates, Land records, or Subsidies</span>
+                <strong className="text-xs font-bold text-govblue-900 block">
+                  {i18n.language === 'en' ? 'Village Citizen Helpdesk AI' : 'ग्राम नागरिक मदत कक्ष AI'}
+                </strong>
+                <span className="text-[9px] text-slate-400 font-semibold block">
+                  {i18n.language === 'en' ? 'Ask about Certificates, Land records, or Subsidies' : 'दाखले, जमीन अभिलेख किंवा शासकीय योजनांविषयी विचारा'}
+                </span>
               </div>
             </div>
           </div>
@@ -812,7 +842,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               <div className="flex justify-start">
                 <div className="bg-slate-50 border border-slate-200 rounded-lg rounded-tl-none p-3 flex items-center gap-2">
                   <Bot size={14} className="text-govsaffron animate-spin" />
-                  <span className="text-xs text-slate-400">Typing helpdesk guidance...</span>
+                  <span className="text-xs text-slate-400">
+                    {i18n.language === 'en' ? 'Typing helpdesk guidance...' : 'मार्गदर्शन टाईप करत आहे...'}
+                  </span>
                 </div>
               </div>
             )}
@@ -827,7 +859,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Ask about birth certificates, old age pensions, or next meeting date..."
+              placeholder={i18n.language === 'en' ? "Ask about birth certificates, old age pensions, or next meeting date..." : "जन्म दाखला, पेन्शन योजना किंवा पुढील सभेच्या तारखेबद्दल विचारा..."}
               className="flex-1 px-3 py-2 border border-slate-200 rounded text-xs focus:outline-none"
             />
             <button
@@ -835,7 +867,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               disabled={!chatInput.trim()}
               className="px-4 py-2 bg-govnavy hover:bg-govblue-700 text-white rounded font-bold text-xs flex items-center gap-1.5 disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
             >
-              <span>Send</span>
+              <span>{i18n.language === 'en' ? 'Send' : 'पाठवा'}</span>
               <Send size={12} />
             </button>
           </form>
