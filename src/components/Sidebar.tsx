@@ -20,13 +20,15 @@ interface SidebarProps {
   setCurrentTab: (tab: string) => void;
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  role?: 'officer' | 'citizen';
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   currentTab, 
   setCurrentTab, 
   collapsed, 
-  setCollapsed 
+  setCollapsed,
+  role = 'officer'
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -35,7 +37,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     i18n.changeLanguage(nextLang);
   };
 
-  const navItems = [
+  const navItems = role === 'citizen' ? [
+    { id: 'dashboard', label: i18n.language === 'en' ? 'Public Info' : 'सार्वजनिक माहिती', icon: LayoutDashboard },
+    { id: 'schemes', label: i18n.language === 'en' ? 'Welfare Schemes' : 'कल्याणकारी योजना', icon: Landmark },
+    { id: 'grievances', label: i18n.language === 'en' ? 'Track Grievances' : 'तक्रारींचा मागोवा', icon: Megaphone },
+    { id: 'ai_assistant', label: i18n.language === 'en' ? 'AI Helpdesk' : 'AI मदत कक्ष', icon: Bot, isAI: true }
+  ] : [
     { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },
     { id: 'citizens', label: t('nav.citizens'), icon: Users },
     { id: 'schemes', label: t('nav.schemes'), icon: Landmark },

@@ -25,6 +25,7 @@ import { GramSabhaAI } from './components/GramSabhaAI';
 import { GISMap } from './components/GISMap';
 import { AIAssistant } from './components/AIAssistant';
 import { Analytics } from './components/Analytics';
+import { CitizenPortal } from './components/CitizenPortal';
 
 // Import i18n initialization
 import './i18n/i18n';
@@ -34,6 +35,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'landing' | 'dashboard'>('landing');
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [userRole, setUserRole] = useState<'officer' | 'citizen'>('officer');
 
   const toggleLanguage = () => {
     const nextLang = i18n.language === 'en' ? 'mr' : 'en';
@@ -42,6 +44,10 @@ function App() {
 
   // Render active dashboard tab
   const renderTabContent = () => {
+    if (userRole === 'citizen') {
+      return <CitizenPortal currentTab={currentTab} setCurrentTab={setCurrentTab} />;
+    }
+
     switch (currentTab) {
       case 'dashboard':
         return (
@@ -309,6 +315,7 @@ function App() {
             setCurrentTab={setCurrentTab} 
             collapsed={sidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
+            role={userRole}
           />
           
           <div className="flex-1 flex flex-col min-w-0">
@@ -318,6 +325,20 @@ function App() {
                 {/* Small Emblem stamp */}
                 <span className="text-xs font-extrabold text-govblue-900 uppercase">Khed Shivapur Gram Panchayat Portal</span>
                 <span className="bg-govgreen/10 text-govgreen text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase border border-govgreen/20">Active Session</span>
+                <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                  <span className="text-[10px] font-bold text-slate-500">PORTAL VIEW:</span>
+                  <select
+                    value={userRole}
+                    onChange={(e) => {
+                      setUserRole(e.target.value as any);
+                      setCurrentTab('dashboard'); // Reset default view
+                    }}
+                    className="bg-slate-50 border border-slate-200 text-xs font-bold text-govblue-900 rounded px-2 py-0.5 focus:outline-none cursor-pointer"
+                  >
+                    <option value="officer">Panchayat Officer 👤</option>
+                    <option value="citizen">Public Citizen 👥</option>
+                  </select>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <button
