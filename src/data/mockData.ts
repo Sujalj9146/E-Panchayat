@@ -1,0 +1,537 @@
+export interface Citizen {
+  id: string;
+  name: string;
+  nameMr: string;
+  age: number;
+  gender: 'Male' | 'Female' | 'Other';
+  genderMr: string;
+  ward: number;
+  occupation: string;
+  occupationMr: string;
+  income: number; // annual in ₹
+  familyId: string;
+  familyName: string;
+  familyMembers: { id: string; name: string; relation: string; relationMr: string }[];
+  eligibleSchemes: string[]; // scheme IDs
+}
+
+export interface Scheme {
+  id: string;
+  name: string;
+  nameMr: string;
+  description: string;
+  descriptionMr: string;
+  minAge: number;
+  maxIncome: number;
+  genderRestriction?: 'Male' | 'Female';
+  benefit: string;
+  benefitMr: string;
+}
+
+export interface Grievance {
+  id: string;
+  title: string;
+  titleMr: string;
+  category: 'Water' | 'Roads' | 'Electricity' | 'Sanitation' | 'Health' | 'Other';
+  categoryMr: string;
+  ward: number;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  priorityMr: string;
+  status: 'Pending' | 'In Progress' | 'Resolved';
+  statusMr: string;
+  submittedDate: string;
+  description: string;
+  descriptionMr: string;
+  deptName: string;
+  deptNameMr: string;
+  coordinates: [number, number]; // [lat, lng]
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  nameMr: string;
+  progress: number; // percentage 0-100
+  budget: number; // in ₹
+  utilized: number; // in ₹
+  status: 'Ongoing' | 'Completed' | 'Delayed';
+  statusMr: string;
+  ward: number;
+  location: string;
+  locationMr: string;
+  description: string;
+  descriptionMr: string;
+  coordinates: [number, number];
+}
+
+export interface SabhaMeeting {
+  id: string;
+  date: string;
+  title: string;
+  titleMr: string;
+  summary: string;
+  summaryMr: string;
+  decisions: string[];
+  decisionsMr: string[];
+  actionItems: {
+    action: string;
+    actionMr: string;
+    responsible: string;
+    responsibleMr: string;
+    deadline: string;
+    status: 'Pending' | 'In Progress' | 'Completed';
+    statusMr: string;
+  }[];
+}
+
+// Map coordinates centered around Khed Shivapur, Pune, Maharashtra (18.2891, 73.8647)
+export const MAP_CENTER: [number, number] = [18.2891, 73.8647];
+
+export const SCHEMES: Scheme[] = [
+  {
+    id: 'scheme_sr_citizen',
+    name: 'Senior Citizen Pension Scheme',
+    nameMr: 'ज्येष्ठ नागरिक पेन्शन योजना',
+    description: 'Provides monthly pension support to senior citizens from low-income families.',
+    descriptionMr: 'कमी उत्पन्न असलेल्या कुटुंबातील ज्येष्ठ नागरिकांना मासिक पेन्शन सहाय्य प्रदान करते.',
+    minAge: 60,
+    maxIncome: 100000,
+    benefit: '₹1,500 / month',
+    benefitMr: '₹१,५०० / महिना'
+  },
+  {
+    id: 'scheme_pm_awas',
+    name: 'Housing Assistance Scheme (Awas Yojana)',
+    nameMr: 'गृहनिर्माण सहाय्य योजना (आवास योजना)',
+    description: 'Financial assistance for construction of houses for rural homeless families.',
+    descriptionMr: 'ग्रामीण बेघर कुटुंबांना घरे बांधण्यासाठी आर्थिक मदत.',
+    minAge: 18,
+    maxIncome: 120000,
+    benefit: '₹1,20,000 for house construction',
+    benefitMr: 'घर बांधणीसाठी ₹१,२०,०००'
+  },
+  {
+    id: 'scheme_krishi_sinchan',
+    name: 'Shetkari Krishi Sinchan Subsidy',
+    nameMr: 'शेतकरी कृषी सिंचन अनुदान योजना',
+    description: 'Drip irrigation subsidy for registered small-holder farmers.',
+    descriptionMr: 'नोंदणीकृत अल्पभूधारक शेतकऱ्यांसाठी ठिबक सिंचन अनुदान.',
+    minAge: 18,
+    maxIncome: 150000,
+    benefit: '80% subsidy on micro-irrigation kits',
+    benefitMr: 'सुक्ष्म सिंचन साधनांवर ८०% अनुदान'
+  },
+  {
+    id: 'scheme_beti_bachao',
+    name: 'Savitribai Phule Girl Education Benefit',
+    nameMr: 'सावित्रीबाई फुले मुलींच्या शिक्षणासाठी आर्थिक मदत',
+    description: 'Education scholarship and allowance for female students from low-income rural households.',
+    descriptionMr: 'कमी उत्पन्न असलेल्या ग्रामीण कुटुंबातील विद्यार्थिनींसाठी शिक्षण शिष्यवृत्ती आणि भत्ता.',
+    minAge: 5,
+    maxIncome: 80000,
+    genderRestriction: 'Female',
+    benefit: '₹5,000 / academic year',
+    benefitMr: '₹५,००० / शैक्षणिक वर्ष'
+  }
+];
+
+export const CITIZENS: Citizen[] = [
+  {
+    id: 'cit_101',
+    name: 'Anandrao Patil',
+    nameMr: 'आनंदराव पाटील',
+    age: 67,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 2,
+    occupation: 'Retired Farmer',
+    occupationMr: 'निवृत्त शेतकरी',
+    income: 45000,
+    familyId: 'fam_patil',
+    familyName: 'Patil Family',
+    familyMembers: [
+      { id: 'cit_102', name: 'Savita Patil', relation: 'Spouse', relationMr: 'पत्नी' },
+      { id: 'cit_103', name: 'Sanjay Patil', relation: 'Son', relationMr: 'मुलगा' }
+    ],
+    eligibleSchemes: ['scheme_sr_citizen', 'scheme_pm_awas', 'scheme_krishi_sinchan']
+  },
+  {
+    id: 'cit_102',
+    name: 'Savita Patil',
+    nameMr: 'सविता पाटील',
+    age: 61,
+    gender: 'Female',
+    genderMr: 'महिला',
+    ward: 2,
+    occupation: 'Homemaker',
+    occupationMr: 'गृहिणी',
+    income: 0,
+    familyId: 'fam_patil',
+    familyName: 'Patil Family',
+    familyMembers: [
+      { id: 'cit_101', name: 'Anandrao Patil', relation: 'Spouse', relationMr: 'पती' },
+      { id: 'cit_103', name: 'Sanjay Patil', relation: 'Son', relationMr: 'मुलगा' }
+    ],
+    eligibleSchemes: ['scheme_sr_citizen', 'scheme_pm_awas']
+  },
+  {
+    id: 'cit_103',
+    name: 'Sanjay Patil',
+    nameMr: 'संजय पाटील',
+    age: 38,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 2,
+    occupation: 'Farmer',
+    occupationMr: 'शेतकरी',
+    income: 85000,
+    familyId: 'fam_patil',
+    familyName: 'Patil Family',
+    familyMembers: [
+      { id: 'cit_101', name: 'Anandrao Patil', relation: 'Father', relationMr: 'वडील' },
+      { id: 'cit_102', name: 'Savita Patil', relation: 'Mother', relationMr: 'आई' }
+    ],
+    eligibleSchemes: ['scheme_pm_awas', 'scheme_krishi_sinchan']
+  },
+  {
+    id: 'cit_104',
+    name: 'Ramesh Shinde',
+    nameMr: 'रमेश शिंदे',
+    age: 72,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 4,
+    occupation: 'Labourer',
+    occupationMr: 'मजूर',
+    income: 38000,
+    familyId: 'fam_shinde',
+    familyName: 'Shinde Family',
+    familyMembers: [
+      { id: 'cit_105', name: 'Lata Shinde', relation: 'Spouse', relationMr: 'पत्नी' }
+    ],
+    eligibleSchemes: ['scheme_sr_citizen', 'scheme_pm_awas']
+  },
+  {
+    id: 'cit_105',
+    name: 'Lata Shinde',
+    nameMr: 'लता शिंदे',
+    age: 65,
+    gender: 'Female',
+    genderMr: 'महिला',
+    ward: 4,
+    occupation: 'Labourer',
+    occupationMr: 'मजूर',
+    income: 12000,
+    familyId: 'fam_shinde',
+    familyName: 'Shinde Family',
+    familyMembers: [
+      { id: 'cit_104', name: 'Ramesh Shinde', relation: 'Spouse', relationMr: 'पती' }
+    ],
+    eligibleSchemes: ['scheme_sr_citizen', 'scheme_pm_awas']
+  },
+  {
+    id: 'cit_106',
+    name: 'Priyanka Deshmukh',
+    nameMr: 'प्रियंका देशमुख',
+    age: 24,
+    gender: 'Female',
+    genderMr: 'महिला',
+    ward: 3,
+    occupation: 'Student',
+    occupationMr: 'विद्यार्थी',
+    income: 15000,
+    familyId: 'fam_deshmukh',
+    familyName: 'Deshmukh Family',
+    familyMembers: [
+      { id: 'cit_107', name: 'Abhijit Deshmukh', relation: 'Brother', relationMr: 'भाऊ' }
+    ],
+    eligibleSchemes: ['scheme_beti_bachao']
+  },
+  {
+    id: 'cit_107',
+    name: 'Abhijit Deshmukh',
+    nameMr: 'अभिजित देशमुख',
+    age: 28,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 3,
+    occupation: 'Shop Owner',
+    occupationMr: 'दुकानदार',
+    income: 140000,
+    familyId: 'fam_deshmukh',
+    familyName: 'Deshmukh Family',
+    familyMembers: [
+      { id: 'cit_106', name: 'Priyanka Deshmukh', relation: 'Sister', relationMr: 'बहीण' }
+    ],
+    eligibleSchemes: ['scheme_pm_awas']
+  },
+  {
+    id: 'cit_108',
+    name: 'Vitthal Jadhav',
+    nameMr: 'विठ्ठल जाधव',
+    age: 58,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 1,
+    occupation: 'Farmer',
+    occupationMr: 'शेतकरी',
+    income: 110000,
+    familyId: 'fam_jadhav',
+    familyName: 'Jadhav Family',
+    familyMembers: [
+      { id: 'cit_109', name: 'Sunita Jadhav', relation: 'Spouse', relationMr: 'पत्नी' }
+    ],
+    eligibleSchemes: ['scheme_krishi_sinchan', 'scheme_pm_awas']
+  },
+  {
+    id: 'cit_109',
+    name: 'Sunita Jadhav',
+    nameMr: 'सुनीता जाधव',
+    age: 52,
+    gender: 'Female',
+    genderMr: 'महिला',
+    ward: 1,
+    occupation: 'Farmer',
+    occupationMr: 'शेतकरी',
+    income: 25000,
+    familyId: 'fam_jadhav',
+    familyName: 'Jadhav Family',
+    familyMembers: [
+      { id: 'cit_108', name: 'Vitthal Jadhav', relation: 'Spouse', relationMr: 'पती' }
+    ],
+    eligibleSchemes: ['scheme_krishi_sinchan', 'scheme_pm_awas']
+  },
+  {
+    id: 'cit_110',
+    name: 'Sunil Ghadge',
+    nameMr: 'सुनील घाडगे',
+    age: 42,
+    gender: 'Male',
+    genderMr: 'पुरुष',
+    ward: 3,
+    occupation: 'Carpenter',
+    occupationMr: 'सुतार',
+    income: 95000,
+    familyId: 'fam_ghadge',
+    familyName: 'Ghadge Family',
+    familyMembers: [],
+    eligibleSchemes: ['scheme_pm_awas']
+  }
+];
+
+export const GRIEVANCES: Grievance[] = [
+  {
+    id: 'grv_201',
+    title: 'Drinking Water Tube-well Leakage',
+    titleMr: 'पिण्याच्या पाण्याचे नळ जोडणी गळती',
+    category: 'Water',
+    categoryMr: 'पाणी पुरवठा',
+    ward: 3,
+    priority: 'High',
+    priorityMr: 'उच्च',
+    status: 'Pending',
+    statusMr: 'प्रलंबित',
+    submittedDate: '2026-08-08',
+    description: 'The primary tube-well near the Khed Shivapur Maruti Temple has been leaking water for 3 days, causing waterlogging and low pressure in Ward 3 houses.',
+    descriptionMr: 'खेड शिवापूर मारुती मंदिराजवळील मुख्य कूपनलिका गेल्या ३ दिवसांपासून गळती होत आहे, ज्यामुळे रस्ता चिखलमय झाला आहे आणि वॉर्ड ३ मधील घरांमध्ये कमी दाबाने पाणी येत आहे.',
+    deptName: 'Water Supply and Sanitation Department',
+    deptNameMr: 'पाणी पुरवठा आणि स्वच्छता विभाग',
+    coordinates: [18.2895, 73.8652]
+  },
+  {
+    id: 'grv_202',
+    title: 'Street Light Malfunction on Main Road',
+    titleMr: 'मुख्य रस्त्यावरील स्ट्रीट लाईट बंद असणे',
+    category: 'Electricity',
+    categoryMr: 'विद्युत पुरवठा',
+    ward: 1,
+    priority: 'Medium',
+    priorityMr: 'मध्यम',
+    status: 'In Progress',
+    statusMr: 'सुरू असलेले',
+    submittedDate: '2026-08-05',
+    description: 'A cluster of 4 street lights on the primary school access road are not working. Creating safety issues in the evening.',
+    descriptionMr: 'प्राथमिक शाळेच्या प्रवेश रस्त्यावरील ४ स्ट्रीट लाईट चालू नाहीत. संध्याकाळी सुरक्षिततेची अडचण निर्माण होत आहे.',
+    deptName: 'MSEB Rural Division (Panchayat Wing)',
+    deptNameMr: 'एमएसईबी ग्रामीण विभाग (पंचायत शाखा)',
+    coordinates: [18.2872, 73.8631]
+  },
+  {
+    id: 'grv_203',
+    title: 'Potholes on Temple Main Access Way',
+    titleMr: 'मंदिराच्या मुख्य रस्त्यावर पडलेले खड्डे',
+    category: 'Roads',
+    categoryMr: 'रस्ते / दळणवळण',
+    ward: 3,
+    priority: 'High',
+    priorityMr: 'उच्च',
+    status: 'Pending',
+    statusMr: 'प्रलंबित',
+    submittedDate: '2026-08-09',
+    description: 'Heavy rain has created deep potholes on the concrete link road in Ward 3. Motorcyclists are slipping frequently.',
+    descriptionMr: 'मुसळधार पावसामुळे वॉर्ड ३ मधील काँक्रीट लिंक रोडवर खोल खड्डे पडले आहेत. दुचाकीस्वार घसरून पडत आहेत.',
+    deptName: 'Public Works Department (Rural Roads)',
+    deptNameMr: 'सार्वजनिक बांधकाम विभाग (ग्रामीण रस्ते)',
+    coordinates: [18.2882, 73.8659]
+  },
+  {
+    id: 'grv_204',
+    title: 'Clogged Open Drain near Weekly Market',
+    titleMr: 'आठवडे बाजाराजवळील उघडे गटार तुंबले',
+    category: 'Sanitation',
+    categoryMr: 'स्वच्छता आणि कचरा व्यवस्थापन',
+    ward: 2,
+    priority: 'Critical',
+    priorityMr: 'अति-तात्काळ',
+    status: 'Pending',
+    statusMr: 'प्रलंबित',
+    submittedDate: '2026-08-09',
+    description: 'Plastic waste has clogged the drainage line near the weekly market square. Wastewater is overflowing onto the market stalls, causing health hazard.',
+    descriptionMr: 'आठवडे बाजाराच्या चौकातील गटाराच्या वाहिनीमध्ये प्लास्टिक कचरा अडकल्याने पाणी तुंबले आहे. सांडपाणी बाजारातील दुकानांमध्ये पसरत असून दुर्गंधी पसरली आहे.',
+    deptName: 'Panchayat Health & Sanitation Cell',
+    deptNameMr: 'पंचायत आरोग्य व स्वच्छता कक्ष',
+    coordinates: [18.2899, 73.8641]
+  },
+  {
+    id: 'grv_205',
+    title: 'Primary Health Sub-centre Medicine Shortage',
+    titleMr: 'प्राथमिक आरोग्य उपकेंद्रात औषधांचा तुटवडा',
+    category: 'Health',
+    categoryMr: 'आरोग्य सुविधा',
+    ward: 4,
+    priority: 'Medium',
+    priorityMr: 'मध्यम',
+    status: 'Resolved',
+    statusMr: 'निवारण झाले',
+    submittedDate: '2026-07-28',
+    description: 'Basic medicines for fever and anti-venoms were out of stock. Standard replenishment request raised.',
+    descriptionMr: 'ताप आणि सर्पदंशावरील मूलभूत औषधांचा साठा संपला होता. औषध पुरवठ्याची मागणी पूर्ण करण्यात आली आहे.',
+    deptName: 'District Health Administration Office',
+    deptNameMr: 'जिल्हा आरोग्य प्रशासन कार्यालय',
+    coordinates: [18.2912, 73.8665]
+  }
+];
+
+export const PROJECTS: Project[] = [
+  {
+    id: 'proj_301',
+    name: 'Village Concrete Road Construction',
+    nameMr: 'गाव अंतर्गत सिमेंट काँक्रीट रस्ता बांधकाम',
+    progress: 68,
+    budget: 1000000,
+    utilized: 720000,
+    status: 'Delayed',
+    statusMr: 'विलंब झालेला',
+    ward: 3,
+    location: 'Ward 3, Shivapur Road To School Lane',
+    locationMr: 'वॉर्ड ३, शिवापूर रस्ता ते शाळा गल्ली',
+    description: 'Upgrading the muddy lane to a full-width durable cement concrete road with standard side drainage blocks.',
+    descriptionMr: 'चिखलाची गल्ली सर्व रुंदीच्या मजबूत सिमेंट काँक्रीट रस्त्यामध्ये बाजूच्या गटारांसह अद्ययावत करणे.',
+    coordinates: [18.2885, 73.8655]
+  },
+  {
+    id: 'proj_302',
+    name: 'Gram Panchayat Digital Center Setup',
+    nameMr: 'ग्रामपंचायत डिजिटल सेवा केंद्र उभारणी',
+    progress: 100,
+    budget: 350000,
+    utilized: 345000,
+    status: 'Completed',
+    statusMr: 'पूर्ण झालेले',
+    ward: 2,
+    location: 'Ward 2, Main Gram Panchayat Building',
+    locationMr: 'वॉर्ड २, मुख्य ग्रामपंचायत कार्यालय इमारत',
+    description: 'Equipping the office with high speed fiber internet, citizen service kiosks, printers and computers for digital certificates delivery.',
+    descriptionMr: 'डिजिटल प्रमाणपत्रे वितरणासाठी कार्यालयात हाय-स्पीड फायबर इंटरनेट, नागरी सेवा किओस्क, प्रिंटर आणि संगणक सुसज्ज करणे.',
+    coordinates: [18.2891, 73.8647]
+  },
+  {
+    id: 'proj_303',
+    name: 'Water Tank and Pipeline Installation',
+    nameMr: 'पाण्याची टाकी आणि मुख्य वाहिनी जोडणी',
+    progress: 45,
+    budget: 1500000,
+    utilized: 950000,
+    status: 'Ongoing',
+    statusMr: 'सुरू असलेले',
+    ward: 1,
+    location: 'Ward 1, Hilltop Site & Colony Extension',
+    locationMr: 'वॉर्ड १, टेकडी परिसर आणि वसाहत विस्तार',
+    description: 'Constructing a 50,000-liter overhead storage tank and laying PVC water pipes to 120 new housing units.',
+    descriptionMr: '५०,००० लिटर क्षमतेची उंचावरील पाण्याची टाकी बांधणे आणि १२० नवीन घरांना पीव्हीसी पाण्याचे पाईप्स टाकणे.',
+    coordinates: [18.2865, 73.8622]
+  },
+  {
+    id: 'proj_304',
+    name: 'Primary School Boundary Wall & Smart Classroom',
+    nameMr: 'प्राथमिक शाळा सुरक्षा भिंत आणि स्मार्ट वर्गखोली',
+    progress: 90,
+    budget: 600000,
+    utilized: 580000,
+    status: 'Ongoing',
+    statusMr: 'सुरू असलेले',
+    ward: 2,
+    location: 'Ward 2, Khed Primary ZP School',
+    locationMr: 'वॉर्ड २, खेड प्राथमिक जिल्हा परिषद शाळा',
+    description: 'Building an outer security compound wall and setting up a projector and computer lab for student learning.',
+    descriptionMr: 'बाहेरील सुरक्षा कंपाऊंड भिंत बांधणे आणि विद्यार्थ्यांच्या शिक्षणासाठी प्रोजेक्टर आणि संगणक लॅब उभारणे.',
+    coordinates: [18.2878, 73.8638]
+  }
+];
+
+export const MOCK_SABHA_MEETING: SabhaMeeting = {
+  id: 'sabha_401',
+  date: '2026-08-04',
+  title: 'Khed Shivapur Gram Sabha Monsoon Session',
+  titleMr: 'खेड शिवापूर ग्रामसभा पावसाळी अधिवेशन बैठक',
+  summary: 'The assembly focused on local monsoon preparedness. Key discussions revolved around the drainage overflow in Ward 2 weekly market, repairing the potholes in the main Ward 3 road before festival season, installing additional LED streetlights on school lanes for security, and checking pipeline expansion under ongoing water projects.',
+  summaryMr: 'या बैठकीत प्रामुख्याने पावसाळ्यातील पूर्वतयारी आणि स्थानिक समस्यांवर लक्ष केंद्रित करण्यात आले. वॉर्ड २ मधील आठवडे बाजारातील गटार तुंबण्याची समस्या, सणासुदीच्या काळापूर्वी वॉर्ड ३ मधील रस्त्यावरील खड्डे दुरुस्त करणे, सुरक्षेसाठी शाळेच्या गल्लीत नवीन एलईडी दिवे बसवणे आणि सुरू असलेल्या पाणी पुरवठा प्रकल्पाच्या पाईपलाईन विस्ताराची तपासणी करणे या विषयांवर सखोल चर्चा झाली.',
+  decisions: [
+    'Approve ₹10,000 emergency fund for manual desilting of the weekly market drains.',
+    'Formally instruct the Junior Engineer to expedite estimation and repair of the Ward 3 road potholes.',
+    'Purchase 20 new LED streetlight luminaires using the unutilized general development fund.'
+  ],
+  decisionsMr: [
+    'आठवडे बाजारातील गटारे स्वच्छ करण्यासाठी ₹१०,००० चा आपत्कालीन निधी मंजूर केला.',
+    'वॉर्ड ३ मधील रस्त्यावरील खड्डे दुरुस्तीचा अंदाज आणि काम त्वरित सुरू करण्यासाठी कनिष्ठ अभियंत्यांना निर्देश दिले.',
+    'न वापरलेल्या सामान्य विकास निधीमधून २० नवीन एलईडी पथदिवे खरेदी करण्यास मंजुरी दिली.'
+  ],
+  actionItems: [
+    {
+      action: 'Submit Ward 3 Road Pothole Repair Estimate',
+      actionMr: 'वॉर्ड ३ रस्ता खड्डे दुरुस्तीचा अंदाजपत्रक सादर करणे',
+      responsible: 'Mr. S. V. Joshi (ZP Junior Engineer)',
+      responsibleMr: 'श्री. एस. व्ही. जोशी (कनिष्ठ अभियंता)',
+      deadline: '2026-08-15',
+      status: 'In Progress',
+      statusMr: 'सुरू असलेले'
+    },
+    {
+      action: 'Organize Cleaning Campaign for Weekly Market',
+      actionMr: 'आठवडे बाजार स्वच्छता मोहीम आयोजित करणे',
+      responsible: 'Gram Sevak (Village Officer)',
+      responsibleMr: 'ग्रामसेवक (गाव अधिकारी)',
+      deadline: '2026-08-12',
+      status: 'Pending',
+      statusMr: 'प्रलंबित'
+    },
+    {
+      action: 'Verify Pipeline Laying in Ward 1 Hilltop Site',
+      actionMr: 'वॉर्ड १ टेकडी परिसरातील पाईपलाईन अंथरण्याचे काम तपासणे',
+      responsible: 'Water Committee Convener',
+      responsibleMr: 'पाणी समितीचे समन्वयक',
+      deadline: '2026-08-20',
+      status: 'Pending',
+      statusMr: 'प्रलंबित'
+    }
+  ]
+};
+
+// Facility Coordinates for GIS map (fixed assets)
+export const GIS_FACILITIES = [
+  { id: 'fac_1', name: 'Zilla Parishad Primary School', nameMr: 'जिल्हा परिषद प्राथमिक शाळा', type: 'school', coordinates: [18.2875, 73.8635], details: 'Grades 1-7, 185 students enrolled' },
+  { id: 'fac_2', name: 'Khed Shivapur Primary Health Sub-centre', nameMr: 'खेड शिवापूर प्राथमिक आरोग्य उपकेंद्र', type: 'health', coordinates: [18.2915, 73.8660], details: 'OPD, basic emergency beds, vaccine distribution' },
+  { id: 'fac_3', name: 'Public Drinking Water Well & Purifier', nameMr: 'सार्वजनिक विहीर आणि जलशुद्धीकरण केंद्र', type: 'water', coordinates: [18.2890, 73.8650], details: 'RO treatment unit, capacity 10,000 LPD' },
+  { id: 'fac_4', name: 'Anganwadi Child Care Center', nameMr: 'अंगणवाडी बाल संगोपन केंद्र', type: 'health', coordinates: [18.2880, 73.8625], details: 'Serving 45 children, midday meal kitchen' },
+  { id: 'fac_5', name: 'Water Tank Hilltop Station', nameMr: 'टेकडीवरील पाण्याची टाकी', type: 'water', coordinates: [18.2863, 73.8620], details: 'Distribution source for Ward 1' }
+];

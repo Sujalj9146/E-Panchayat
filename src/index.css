@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@theme {
+  --color-govblue-50: #f0f4f9;
+  --color-govblue-100: #dee7f2;
+  --color-govblue-200: #c2d2e7;
+  --color-govblue-300: #97b4d7;
+  --color-govblue-400: #6790c3;
+  --color-govblue-500: #4672ab;
+  --color-govblue-600: #35598d;
+  --color-govblue-700: #2c4772;
+  --color-govblue-800: #283e5f;
+  --color-govblue-900: #253551;
+  --color-govblue-950: #151e30;
+
+  --color-govgreen-50: #f0fdf4;
+  --color-govgreen-100: #dcfce7;
+  --color-govgreen-200: #bbf7d0;
+  --color-govgreen-300: #86efac;
+  --color-govgreen-400: #4ade80;
+  --color-govgreen-500: #22c55e;
+  --color-govgreen-600: #16a34a;
+  --color-govgreen-700: #15803d;
+  --color-govgreen-800: #166534;
+  --color-govgreen-900: #14532d;
+  --color-govgreen-950: #052e16;
+
+  --color-govpurple-50: #faf5ff;
+  --color-govpurple-100: #f3e8ff;
+  --color-govpurple-200: #e9d5ff;
+  --color-govpurple-300: #d8b4fe;
+  --color-govpurple-400: #c084fc;
+  --color-govpurple-500: #a855f7;
+  --color-govpurple-600: #9333ea;
+  --color-govpurple-700: #7e22ce;
+  --color-govpurple-800: #6b21a8;
+  --color-govpurple-900: #581c87;
+  --color-govpurple-950: #3b0764;
+}
+
+body {
+  background-color: #0b0f19;
+  color: #f8fafc;
+  font-family: 'Inter', 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Glassmorphism utility classes */
+.glass-panel {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Leaflet Map overrides to fit dark theme */
+.leaflet-container {
+  background: #0f172a !important;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+}
+
+.leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+/* Remove default layout wrapper styles from Vite */
+#root {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  border: none !important;
+  display: block !important;
+}
