@@ -16,6 +16,28 @@ export const GrievanceManagement: React.FC = () => {
   const [grievanceList, setGrievanceList] = useState<Grievance[]>(GRIEVANCES);
   const [showModal, setShowModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'All' | 'Pending' | 'High' | 'Resolved'>('All');
+
+  const handleStatusChange = (id: string, newStatus: Grievance['status']) => {
+    let statusMr = 'प्रलंबित';
+    if (newStatus === 'In Progress') statusMr = 'सुरू असलेले';
+    if (newStatus === 'Resolved') statusMr = 'निवारण झाले';
+
+    // Update React State
+    const updated = grievanceList.map(g => {
+      if (g.id === id) {
+        return { ...g, status: newStatus, statusMr };
+      }
+      return g;
+    });
+    setGrievanceList(updated);
+
+    // Sync back to cache database
+    const dbIndex = GRIEVANCES.findIndex(g => g.id === id);
+    if (dbIndex !== -1) {
+      GRIEVANCES[dbIndex].status = newStatus;
+      GRIEVANCES[dbIndex].statusMr = statusMr;
+    }
+  };
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Form Fields
@@ -283,13 +305,21 @@ export const GrievanceManagement: React.FC = () => {
                     <h3 className="text-sm font-bold text-white tracking-wide leading-snug">
                       {i18n.language === 'en' ? g.title : g.titleMr}
                     </h3>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex-shrink-0 ${
-                      isResolved 
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' 
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/20 animate-pulse'
-                    }`}>
-                      {i18n.language === 'en' ? g.status : g.statusMr}
-                    </span>
+                    <select
+                      value={g.status}
+                      onChange={(e) => handleStatusChange(g.id, e.target.value as any)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex-shrink-0 cursor-pointer focus:outline-none border ${
+                        isResolved 
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/20' 
+                          : g.status === 'In Progress'
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/20'
+                            : 'bg-slate-900 text-slate-400 border-slate-800'
+                      }`}
+                    >
+                      <option value="Pending" className="bg-slate-950 text-slate-400">Pending</option>
+                      <option value="In Progress" className="bg-slate-950 text-amber-400">In Progress</option>
+                      <option value="Resolved" className="bg-slate-950 text-emerald-400">Resolved</option>
+                    </select>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-slate-500">
                     <span>ID: {g.id}</span>
