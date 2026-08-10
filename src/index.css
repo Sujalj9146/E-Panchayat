@@ -3,99 +3,73 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 @theme {
-  --color-govblue-50: #f0f4f9;
-  --color-govblue-100: #dee7f2;
-  --color-govblue-200: #c2d2e7;
-  --color-govblue-300: #97b4d7;
-  --color-govblue-400: #6790c3;
-  --color-govblue-500: #4672ab;
-  --color-govblue-600: #35598d;
-  --color-govblue-700: #2c4772;
-  --color-govblue-800: #283e5f;
-  --color-govblue-900: #253551;
-  --color-govblue-950: #151e30;
+  --color-govblue-50: #f0f5fa;
+  --color-govblue-100: #dce7f3;
+  --color-govblue-200: #bbd0e8;
+  --color-govblue-300: #88acd6;
+  --color-govblue-400: #4e80bc;
+  --color-govblue-500: #33629e;
+  --color-govblue-600: #254b7f;
+  --color-govblue-700: #1f3d67;
+  --color-govblue-800: #1a3254;
+  --color-govblue-900: #0f223a;
+  --color-govblue-950: #0a1424;
 
-  --color-govgreen-50: #f0fdf4;
-  --color-govgreen-100: #dcfce7;
-  --color-govgreen-200: #bbf7d0;
-  --color-govgreen-300: #86efac;
-  --color-govgreen-400: #4ade80;
-  --color-govgreen-500: #22c55e;
-  --color-govgreen-600: #16a34a;
-  --color-govgreen-700: #15803d;
-  --color-govgreen-800: #166534;
-  --color-govgreen-900: #14532d;
-  --color-govgreen-950: #052e16;
-
-  --color-govpurple-50: #faf5ff;
-  --color-govpurple-100: #f3e8ff;
-  --color-govpurple-200: #e9d5ff;
-  --color-govpurple-300: #d8b4fe;
-  --color-govpurple-400: #c084fc;
-  --color-govpurple-500: #a855f7;
-  --color-govpurple-600: #9333ea;
-  --color-govpurple-700: #7e22ce;
-  --color-govpurple-800: #6b21a8;
-  --color-govpurple-900: #581c87;
-  --color-govpurple-950: #3b0764;
+  --color-govsaffron: #ff9933;
+  --color-govgreen: #138808;
+  --color-govnavy: #000080;
 }
 
 body {
-  background-color: #0b0f19;
-  color: #f8fafc;
+  background-color: #f0f4f8;
+  color: #1e293b;
   font-family: 'Inter', 'Outfit', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar for premium feel */
+/* Government Specific Styling utilities */
+.gov-tricolor-strip {
+  background: linear-gradient(to right, #ff9933 0%, #ff9933 33.3%, #ffffff 33.3%, #ffffff 66.6%, #138808 66.6%, #138808 100%);
+  height: 4px;
+}
+
+/* Custom Scrollbar for light theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
-/* Glassmorphism utility classes */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* Leaflet Map overrides to fit dark theme */
+/* Leaflet Map overrides for light theme */
 .leaflet-container {
-  background: #0f172a !important;
+  background: #f8fafc !important;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #cbd5e1;
   font-family: inherit;
 }
 
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0;
   border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .leaflet-popup-close-button {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 /* Remove default layout wrapper styles from Vite */
@@ -108,4 +82,91 @@ body {
   text-align: left !important;
   border: none !important;
   display: block !important;
+}
+
+/* -------------------------------------------------------------
+   SMART THEME OVERRIDES: Pushes dark-classes to Light Gov Theme
+   ------------------------------------------------------------- */
+
+/* Containers & Cards */
+.glass-panel, 
+.glass-card, 
+.bg-slate-900, 
+.bg-slate-900\/30,
+.bg-slate-900\/40,
+.bg-slate-900\/50, 
+.bg-slate-900\/60,
+.bg-slate-900\/80,
+.bg-slate-900\/90, 
+.bg-slate-950,
+.bg-slate-850 {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Global Border Colors overrides */
+.border-slate-800, 
+.border-slate-850, 
+.border-slate-900 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Text Colors overrides to ensure high contrast legibility */
+.text-white, 
+.text-slate-100, 
+.text-slate-200, 
+.text-slate-300, 
+.text-slate-350 {
+  color: #1e293b !important;
+}
+
+.text-slate-400, 
+.text-slate-500 {
+  color: #57657a !important;
+}
+
+/* Form inputs & controls styles */
+input, 
+select, 
+textarea {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+input:focus, 
+select:focus, 
+textarea:focus {
+  border-color: #000080 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 1px #000080 !important;
+}
+
+/* Tables headers reset */
+thead tr {
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+thead th {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+
+tbody tr {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Selection list background highlight */
+.bg-indigo-600\/10 {
+  background-color: #f0f4f9 !important;
+  border-left: 4px solid #000080 !important;
 }
