@@ -39,7 +39,8 @@ export const BeneficiaryRecommendations: React.FC = () => {
           maxIncome: s.maxIncome,
           genderRestriction: s.genderRestriction,
           benefit: s.benefit,
-          benefitMr: s.benefitMr
+          benefitMr: s.benefitMr,
+          formUrl: s.formUrl
         });
       }
       setSchemeFeed([...GOV_SCHEMES_FEED]);

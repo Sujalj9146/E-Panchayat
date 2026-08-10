@@ -26,6 +26,7 @@ export interface Scheme {
   genderRestriction?: 'Male' | 'Female';
   benefit: string;
   benefitMr: string;
+  formUrl?: string;
 }
 
 export interface Grievance {
@@ -97,7 +98,8 @@ export const SCHEMES: Scheme[] = [
     minAge: 60,
     maxIncome: 100000,
     benefit: '₹1,500 / month',
-    benefitMr: '₹१,५०० / महिना'
+    benefitMr: '₹१,५०० / महिना',
+    formUrl: 'https://sanjaygandhiyojana.maharashtra.gov.in'
   },
   {
     id: 'scheme_pm_awas',
@@ -108,7 +110,8 @@ export const SCHEMES: Scheme[] = [
     minAge: 18,
     maxIncome: 120000,
     benefit: '₹1,20,000 for house construction',
-    benefitMr: 'घर बांधणीसाठी ₹१,२०,०००'
+    benefitMr: 'घर बांधणीसाठी ₹१,२०,०००',
+    formUrl: 'https://pmayg.nic.in'
   },
   {
     id: 'scheme_krishi_sinchan',
@@ -119,7 +122,8 @@ export const SCHEMES: Scheme[] = [
     minAge: 18,
     maxIncome: 150000,
     benefit: '80% subsidy on micro-irrigation kits',
-    benefitMr: 'सुक्ष्म सिंचन साधनांवर ८०% अनुदान'
+    benefitMr: 'सुक्ष्म सिंचन साधनांवर ८०% अनुदान',
+    formUrl: 'https://mahadbt.maharashtra.gov.in'
   },
   {
     id: 'scheme_beti_bachao',
@@ -131,7 +135,8 @@ export const SCHEMES: Scheme[] = [
     maxIncome: 80000,
     genderRestriction: 'Female',
     benefit: '₹5,000 / academic year',
-    benefitMr: '₹५,००० / शैक्षणिक वर्ष'
+    benefitMr: '₹५,००० / शैक्षणिक वर्ष',
+    formUrl: 'https://myscheme.gov.in'
   }
 ];
 

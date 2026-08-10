@@ -143,8 +143,13 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
       const isEligible = reasons.length === 0;
 
       // Simulated form directions
-      let formHelp = 'Submit documents at Panchayat Digital Center (Ward 2)';
-      let formHelpMr = 'ग्रामपंचायत डिजिटल सेवा केंद्र (वॉर्ड २) येथे कागदपत्रे सादर करा';
+      let formHelp = s.formUrl 
+        ? `Apply online via official portal`
+        : 'Submit documents at Panchayat Digital Center (Ward 2)';
+      let formHelpMr = s.formUrl
+        ? `अधिकृत पोर्टलवर ऑनलाईन अर्ज करा`
+        : 'ग्रामपंचायत डिजिटल सेवा केंद्र (वॉर्ड २) येथे कागदपत्रे सादर करा';
+
       if (s.id === 'scheme_krishi_sinchan') {
         formHelp = 'Apply online via MahaDBT Farmer Portal or visit Ward 4 Agriculture Cell';
         formHelpMr = 'महाडीबीटी शेतकरी पोर्टलवर ऑनलाईन अर्ज करा किंवा वॉर्ड ४ मधील कृषी विभाग';
@@ -481,11 +486,24 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                         {isEligible ? (
                           <div className="space-y-1.5">
                             <span className="text-emerald-700 font-bold block">✓ You qualify for this scheme!</span>
-                            <div className="flex items-center gap-1.5 text-slate-700 bg-emerald-50 border border-emerald-100 p-2 rounded">
-                              <ExternalLink size={12} className="text-govgreen" />
-                              <span>
-                                <strong>Where to apply:</strong> {i18n.language === 'en' ? scheme.formHelp : scheme.formHelpMr}
-                              </span>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-700 bg-emerald-50 border border-emerald-100 p-2.5 rounded">
+                              <div className="flex items-center gap-1.5">
+                                <ExternalLink size={12} className="text-govgreen flex-shrink-0" />
+                                <span>
+                                  <strong>Where to apply:</strong> {i18n.language === 'en' ? scheme.formHelp : scheme.formHelpMr}
+                                </span>
+                              </div>
+                              {scheme.formUrl && (
+                                <a
+                                  href={scheme.formUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-[10px] font-black hover:text-white transition-all shadow flex items-center gap-1 shrink-0 no-underline cursor-pointer select-none"
+                                >
+                                  <span>Apply Online / अर्ज करा</span>
+                                  <ExternalLink size={9} />
+                                </a>
+                              )}
                             </div>
                           </div>
                         ) : (
