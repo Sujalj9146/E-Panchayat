@@ -1,7 +1,6 @@
 services:
-  - type: web
+  - type: static
     name: e-panchayat-ai
-    runtime: static
     buildCommand: npm run build
     publishDir: dist
     routes:
