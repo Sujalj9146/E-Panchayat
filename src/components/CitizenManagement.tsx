@@ -6,12 +6,13 @@ import {
   MapPin, 
   Briefcase, 
   Award, 
-  GitMerge,
-  ArrowRight,
-  X
+  GitMerge, 
+  ArrowRight, 
+  X,
+  Check,
+  FileCheck
 } from 'lucide-react';
 import { CITIZENS, SCHEMES, CITIZEN_DOCUMENTS } from '../data/mockData';
-import { Check, X as RejectIcon, FileCheck } from 'lucide-react';
 
 
 export const CitizenManagement: React.FC = () => {
@@ -25,6 +26,11 @@ export const CitizenManagement: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'directory' | 'verification'>('directory');
   const [docList, setDocList] = useState(CITIZEN_DOCUMENTS);
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+
+  const previewCitizenProfile = useMemo(() => {
+    if (!previewDoc) return null;
+    return CITIZENS.find(c => c.name === previewDoc.citizenName) || CITIZENS[0];
+  }, [previewDoc]);
 
   const handleVerifyDoc = (id: string) => {
     const docIndex = CITIZEN_DOCUMENTS.findIndex(d => d.id === id);
@@ -419,7 +425,7 @@ export const CitizenManagement: React.FC = () => {
                                 className="p-1 rounded text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-250 transition-colors"
                                 title="Reject Document"
                               >
-                                <RejectIcon size={14} />
+                                <X size={14} />
                               </button>
                               <button
                                 onClick={() => handleVerifyDoc(doc.id)}
@@ -447,159 +453,154 @@ export const CitizenManagement: React.FC = () => {
       )}
 
       {/* Document Preview Modal */}
-      {previewDoc && (() => {
-        const citizenProfile = CITIZENS.find(c => c.name === previewDoc.citizenName) || CITIZENS[0];
-        const isPending = previewDoc.status === 'Pending Verification';
-
-        return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden border-t-4 border-govsaffron flex flex-col justify-between">
-              
-              {/* Header */}
-              <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                <div>
-                  <strong className="text-xs font-bold text-govblue-900 block uppercase">Document Auditor</strong>
-                  <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Audit: {previewDoc.fileName}</span>
-                </div>
-                <button 
-                  onClick={() => setPreviewDoc(null)}
-                  className="p-1 rounded hover:bg-slate-250 text-slate-400 hover:text-slate-700"
-                >
-                  <X size={16} />
-                </button>
+      {previewDoc && previewCitizenProfile && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden border-t-4 border-govsaffron flex flex-col justify-between text-slate-800">
+            
+            {/* Header */}
+            <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+              <div>
+                <strong className="text-xs font-bold text-govblue-900 block uppercase">Document Auditor</strong>
+                <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Audit: {previewDoc.fileName}</span>
               </div>
-
-              {/* Body: Styled document rendering */}
-              <div className="p-5 overflow-y-auto max-h-[380px] bg-slate-100/50 flex items-center justify-center">
-                {previewDoc.docType === 'Income Certificate' ? (
-                  /* Income Certificate Official Document Graphic */
-                  <div className="bg-white border-2 border-amber-800 p-5 rounded w-full max-w-[320px] aspect-[1/1.4] flex flex-col justify-between text-center select-none shadow-sm relative overflow-hidden">
-                    <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none text-7xl font-extrabold text-amber-900 select-none">
-                      PUNE
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Department of Revenue • Government of Maharashtra</span>
-                      <h4 className="text-[10px] font-black text-amber-900 uppercase tracking-widest border-b border-amber-800 pb-1 m-0">INCOME CERTIFICATE</h4>
-                    </div>
-                    <div className="text-left text-[8px] font-bold text-slate-700 space-y-2 py-4">
-                      <p className="leading-normal">
-                        This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {citizenProfile.ward}, Khed Shivapur, Pune, Maharashtra, has an annual family income of:
-                      </p>
-                      <div className="text-center py-2.5 bg-amber-50 border border-dashed border-amber-800/40 rounded">
-                        <strong className="text-sm font-black text-emerald-750">₹{citizenProfile.income.toLocaleString()}/-</strong>
-                        <span className="block text-[7px] text-slate-400 mt-0.5">Rupees {citizenProfile.income === 45000 ? 'Forty Five Thousand Only' : 'Sixty Thousand Only'}</span>
-                      </div>
-                      <p className="leading-normal">
-                        This certificate is issued on the basis of local talathi report for the Assessment Year 2025-26.
-                      </p>
-                    </div>
-                    <div className="flex items-end justify-between text-[7px] font-bold text-slate-500">
-                      <div className="text-left">
-                        <span>Place: Haveli, Pune</span>
-                        <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
-                      </div>
-                      <div className="text-center font-mono">
-                        <span className="border-t border-slate-300 block pt-0.5 px-2">Tahsildar Desk</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : previewDoc.docType === 'Aadhaar Card' || previewDoc.fileName.toLowerCase().includes('aadhaar') ? (
-                  /* Aadhaar Card Graphic */
-                  <div className="bg-white border-2 border-red-500 p-4 rounded-lg w-full max-w-[320px] aspect-[1.58/1] flex flex-col justify-between select-none shadow-sm relative overflow-hidden border-t-govnavy">
-                    <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
-                      <span className="text-[8px] font-extrabold text-red-600">भारत सरकार / Govt of India</span>
-                      <span className="text-[9px]">🇮🇳</span>
-                    </div>
-                    <div className="flex gap-3 py-2 flex-1">
-                      {/* Avatar silhouette */}
-                      <div className="w-12 h-14 bg-slate-200 rounded flex items-end justify-center overflow-hidden border border-slate-350">
-                        <User size={30} className="text-slate-450 translate-y-1" />
-                      </div>
-                      <div className="text-left text-[8px] font-bold text-slate-750 space-y-1">
-                        <strong className="text-[9px] text-slate-900 block">{previewDoc.citizenName}</strong>
-                        <span>DOB: 12/05/{67 === citizenProfile.age ? '1959' : '1996'}</span>
-                        <span className="block">Gender: {citizenProfile.gender === 'Female' ? 'Female / महिला' : 'Male / पुरुष'}</span>
-                      </div>
-                    </div>
-                    <div className="text-center border-t border-red-200 pt-1.5">
-                      <strong className="text-xs font-black font-mono tracking-wider text-slate-800">4839 1234 {citizenProfile.id === 'cit_101' ? '7629' : '1082'}</strong>
-                    </div>
-                  </div>
-                ) : (
-                  /* Land Extract 7/12 Graphic */
-                  <div className="bg-white border-2 border-emerald-800 p-5 rounded w-full max-w-[320px] aspect-[1/1.4] flex flex-col justify-between text-center select-none shadow-sm relative overflow-hidden">
-                    <div className="space-y-1">
-                      <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Land Records Department • Government of Maharashtra</span>
-                      <h4 className="text-[9px] font-black text-emerald-950 uppercase tracking-widest border-b border-emerald-800 pb-1 m-0">गाव नमुना ७ (अधिकार अभिलेख पत्रक) / FORM VII-XII</h4>
-                    </div>
-                    <div className="text-left text-[7px] font-bold text-slate-750 space-y-2 py-3">
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-b border-slate-200 pb-1 text-slate-700">
-                        <span>District: Pune</span>
-                        <span>Taluka: Haveli</span>
-                        <span>Village: Khed Shivapur</span>
-                        <span>Survey No: 184/A</span>
-                      </div>
-                      <p className="leading-normal">
-                        <strong>Bhudar/Owner Name:</strong> {previewDoc.citizenName}
-                      </p>
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
-                        <span>Total Area: 1.25 Hectares</span>
-                        <span>Land Class: Jirayat (Dry crop)</span>
-                        <span>Tax Assessment: ₹14.50</span>
-                        <span>Status: Clear (No liabilities)</span>
-                      </div>
-                    </div>
-                    <div className="flex items-end justify-between text-[7px] font-bold text-slate-500 mt-2">
-                      <div className="text-left">
-                        <span>Verifier ID: Haveli-LRC-876</span>
-                        <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
-                      </div>
-                      <div className="text-center font-mono">
-                        <span className="border-t border-slate-300 block pt-0.5 px-2">Land Inspector Desk</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Actions Footer inside Modal */}
-              <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2.5">
-                {isPending ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        handleRejectDoc(previewDoc.id);
-                        setPreviewDoc(null);
-                      }}
-                      className="px-3.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-650 hover:bg-rose-50 hover:text-rose-600 transition-colors"
-                    >
-                      Reject Document
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleVerifyDoc(previewDoc.id);
-                        setPreviewDoc(null);
-                      }}
-                      className="px-4 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow"
-                    >
-                      <Check size={14} />
-                      <span>Verify & Save to DB</span>
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setPreviewDoc(null)}
-                    className="px-4 py-1.5 bg-slate-250 hover:bg-slate-300 text-slate-700 rounded text-xs font-bold transition-colors"
-                  >
-                    Close Viewer
-                  </button>
-                )}
-              </div>
-
+              <button 
+                onClick={() => setPreviewDoc(null)}
+                className="p-1 rounded hover:bg-slate-250 text-slate-400 hover:text-slate-700"
+              >
+                <X size={16} />
+              </button>
             </div>
+
+            {/* Body: Styled document rendering */}
+            <div className="p-5 overflow-y-auto max-h-[380px] bg-slate-100/50 flex items-center justify-center">
+              {previewDoc.docType === 'Income Certificate' ? (
+                /* Income Certificate Official Document Graphic */
+                <div className="bg-white border-2 border-amber-800 p-5 rounded w-full max-w-[320px] aspect-[1/1.4] flex flex-col justify-between text-center select-none shadow-sm relative overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none text-7xl font-extrabold text-amber-900 select-none">
+                    PUNE
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Department of Revenue • Government of Maharashtra</span>
+                    <h4 className="text-[10px] font-black text-amber-900 uppercase tracking-widest border-b border-amber-800 pb-1 m-0">INCOME CERTIFICATE</h4>
+                  </div>
+                  <div className="text-left text-[8px] font-bold text-slate-700 space-y-2 py-4">
+                    <p className="leading-normal">
+                      This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {previewCitizenProfile.ward}, Khed Shivapur, Pune, Maharashtra, has an annual family income of:
+                    </p>
+                    <div className="text-center py-2.5 bg-amber-50 border border-dashed border-amber-800/40 rounded">
+                      <strong className="text-sm font-black text-emerald-750">₹{previewCitizenProfile.income.toLocaleString()}/-</strong>
+                      <span className="block text-[7px] text-slate-400 mt-0.5">Rupees {previewCitizenProfile.income === 45000 ? 'Forty Five Thousand Only' : 'Sixty Thousand Only'}</span>
+                    </div>
+                    <p className="leading-normal">
+                      This certificate is issued on the basis of local talathi report for the Assessment Year 2025-26.
+                    </p>
+                  </div>
+                  <div className="flex items-end justify-between text-[7px] font-bold text-slate-500">
+                    <div className="text-left">
+                      <span>Place: Haveli, Pune</span>
+                      <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
+                    </div>
+                    <div className="text-center font-mono">
+                      <span className="border-t border-slate-300 block pt-0.5 px-2">Tahsildar Desk</span>
+                    </div>
+                  </div>
+                </div>
+              ) : previewDoc.docType === 'Aadhaar Card' || previewDoc.fileName.toLowerCase().includes('aadhaar') ? (
+                /* Aadhaar Card Graphic */
+                <div className="bg-white border-2 border-red-500 p-4 rounded-lg w-full max-w-[320px] aspect-[1.58/1] flex flex-col justify-between select-none shadow-sm relative overflow-hidden border-t-govnavy">
+                  <div className="flex justify-between items-center border-b border-red-200 pb-1.5">
+                    <span className="text-[8px] font-extrabold text-red-600">भारत सरकार / Govt of India</span>
+                    <span className="text-[9px]">🇮🇳</span>
+                  </div>
+                  <div className="flex gap-3 py-2 flex-1">
+                    {/* Avatar silhouette */}
+                    <div className="w-12 h-14 bg-slate-200 rounded flex items-end justify-center overflow-hidden border border-slate-350">
+                      <User size={30} className="text-slate-455 translate-y-1" />
+                    </div>
+                    <div className="text-left text-[8px] font-bold text-slate-750 space-y-1">
+                      <strong className="text-[9px] text-slate-900 block">{previewDoc.citizenName}</strong>
+                      <span>DOB: 12/05/{67 === previewCitizenProfile.age ? '1959' : '1996'}</span>
+                      <span className="block">Gender: {previewCitizenProfile.gender === 'Female' ? 'Female / महिला' : 'Male / पुरुष'}</span>
+                    </div>
+                  </div>
+                  <div className="text-center border-t border-red-200 pt-1.5">
+                    <strong className="text-xs font-black font-mono tracking-wider text-slate-800">4839 1234 {previewCitizenProfile.id === 'cit_101' ? '7629' : '1082'}</strong>
+                  </div>
+                </div>
+              ) : (
+                /* Land Extract 7/12 Graphic */
+                <div className="bg-white border-2 border-emerald-800 p-5 rounded w-full max-w-[320px] aspect-[1/1.4] flex flex-col justify-between text-center select-none shadow-sm relative overflow-hidden">
+                  <div className="space-y-1">
+                    <span className="text-[7px] font-black uppercase text-slate-400 tracking-wider">Land Records Department • Government of Maharashtra</span>
+                    <h4 className="text-[9px] font-black text-emerald-950 uppercase tracking-widest border-b border-emerald-800 pb-1 m-0">गाव नमुना ७ (अधिकार अभिलेख पत्रक) / FORM VII-XII</h4>
+                  </div>
+                  <div className="text-left text-[7px] font-bold text-slate-755 space-y-2 py-3">
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-b border-slate-200 pb-1 text-slate-700">
+                      <span>District: Pune</span>
+                      <span>Taluka: Haveli</span>
+                      <span>Village: Khed Shivapur</span>
+                      <span>Survey No: 184/A</span>
+                    </div>
+                    <p className="leading-normal">
+                      <strong>Bhudar/Owner Name:</strong> {previewDoc.citizenName}
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-slate-700">
+                      <span>Total Area: 1.25 Hectares</span>
+                      <span>Land Class: Jirayat (Dry crop)</span>
+                      <span>Tax Assessment: ₹14.50</span>
+                      <span>Status: Clear (No liabilities)</span>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-between text-[7px] font-bold text-slate-500 mt-2">
+                    <div className="text-left">
+                      <span>Verifier ID: Haveli-LRC-876</span>
+                      <span className="block mt-0.5">Date: {previewDoc.submittedDate}</span>
+                    </div>
+                    <div className="text-center font-mono">
+                      <span className="border-t border-slate-300 block pt-0.5 px-2">Land Inspector Desk</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions Footer inside Modal */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2.5">
+              {previewDoc.status === 'Pending Verification' ? (
+                <>
+                  <button
+                    onClick={() => {
+                      handleRejectDoc(previewDoc.id);
+                      setPreviewDoc(null);
+                    }}
+                    className="px-3.5 py-1.5 border border-slate-200 rounded text-xs font-bold text-slate-650 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                  >
+                    Reject Document
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleVerifyDoc(previewDoc.id);
+                      setPreviewDoc(null);
+                    }}
+                    className="px-4 py-1.5 bg-govnavy hover:bg-govblue-700 text-white rounded text-xs font-bold flex items-center gap-1 transition-colors shadow"
+                  >
+                    <Check size={14} />
+                    <span>Verify & Save to DB</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="px-4 py-1.5 bg-slate-250 hover:bg-slate-350 text-slate-700 rounded text-xs font-bold transition-colors"
+                >
+                  Close Viewer
+                </button>
+              )}
+            </div>
+
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 };
