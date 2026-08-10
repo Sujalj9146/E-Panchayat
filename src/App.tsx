@@ -47,7 +47,7 @@ function App() {
   // Render active dashboard tab
   const renderTabContent = () => {
     if (userRole === 'citizen') {
-      return <CitizenPortal currentTab={currentTab} setCurrentTab={setCurrentTab} />;
+      return <CitizenPortal currentTab={currentTab} setCurrentTab={setCurrentTab} citizenId={loginUser} />;
     }
 
     switch (currentTab) {

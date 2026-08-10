@@ -616,5 +616,15 @@ export const CITIZEN_DOCUMENTS: CitizenDocument[] = [
     submittedDate: '2026-08-10',
     status: 'Pending Verification',
     statusMr: 'पडताळणी प्रलंबित'
+  },
+  {
+    id: 'doc_103',
+    citizenName: 'Anandrao Patil',
+    docType: 'Land ownership 7/12 Extract',
+    docTypeMr: '७/१२ उतारा',
+    fileName: '7_12_extract_anandrao.pdf',
+    submittedDate: '2026-08-08',
+    status: 'Verified',
+    statusMr: 'पडताळणी पूर्ण'
   }
 ];

@@ -16,29 +16,38 @@ import {
   ExternalLink,
   FileText
 } from 'lucide-react';
-import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS } from '../data/mockData';
+import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS, CITIZENS } from '../data/mockData';
 import type { Grievance } from '../data/mockData';
 
 interface CitizenPortalProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
+  citizenId: string;
 }
 
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ 
   currentTab, 
-  setCurrentTab 
+  setCurrentTab,
+  citizenId
 }) => {
   const { i18n } = useTranslation();
+
+  const activeCitizen = useMemo(() => {
+    const matched = CITIZENS.find(c => c.id === citizenId);
+    if (matched) return matched;
+    const matchByName = CITIZENS.find(c => c.id.toLowerCase() === citizenId.toLowerCase() || c.name.toLowerCase() === citizenId.toLowerCase());
+    return matchByName || CITIZENS[0];
+  }, [citizenId, CITIZENS]);
   
   // Grievances filed by the citizen in this session
   const [myGrievances, setMyGrievances] = useState<Grievance[]>(GRIEVANCES.slice(0, 2));
   const [activeGrievanceId, setActiveGrievanceId] = useState<string | null>(GRIEVANCES[0].id);
 
   // Scheme eligibility inputs
-  const [ageInput, setAgeInput] = useState<string>('30');
-  const [incomeInput, setIncomeInput] = useState<string>('60000');
-  const [genderInput, setGenderInput] = useState<'Male' | 'Female'>('Female');
-  const [farmerInput, setFarmerInput] = useState<boolean>(true);
+  const [ageInput, setAgeInput] = useState<string>(activeCitizen.age.toString());
+  const [incomeInput, setIncomeInput] = useState<string>(activeCitizen.income.toString());
+  const [genderInput, setGenderInput] = useState<'Male' | 'Female'>(activeCitizen.gender === 'Female' ? 'Female' : 'Male');
+  const [farmerInput, setFarmerInput] = useState<boolean>(activeCitizen.occupation.toLowerCase().includes('farmer') || activeCitizen.occupationMr.includes('शेतकरी'));
   const [eligibleSchemesList, setEligibleSchemesList] = useState<any[]>([]);
   const [checked, setChecked] = useState(false);
 
@@ -47,6 +56,10 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [docTypeInput, setDocTypeInput] = useState('Income Certificate');
   const [fileNameInput, setFileNameInput] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  const filteredDocs = useMemo(() => {
+    return citizenDocs.filter(doc => doc.citizenName.toLowerCase() === activeCitizen.name.toLowerCase());
+  }, [citizenDocs, activeCitizen]);
 
   // Chatbot State
   const [chatInput, setChatInput] = useState('');
@@ -72,12 +85,14 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   // Document upload handler
   const handleDocUpload = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fileNameInput) return;
+
     const newDoc = {
       id: `doc_${Date.now().toString().substring(8)}`,
-      citizenName: 'Savita Patil', // mock citizen name
+      citizenName: activeCitizen.name, // active logged-in citizen name
       docType: docTypeInput,
       docTypeMr: docTypeInput === 'Income Certificate' ? 'उत्पन्नाचा दाखला' : docTypeInput === 'Aadhaar Card' ? 'आधार कार्ड' : '७/१२ उतारा',
-      fileName: fileNameInput || `${docTypeInput.toLowerCase().replace(/\s+/g, '_')}_savita.pdf`,
+      fileName: fileNameInput,
       submittedDate: new Date().toISOString().split('T')[0],
       status: 'Pending Verification' as any,
       statusMr: 'पडताळणी प्रलंबित'
@@ -669,13 +684,17 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-slate-500 block">Mock File Name / फाईलचे नाव</label>
+                <label className="text-slate-500 block">Select Document File / फाईल निवडा</label>
                 <input
-                  type="text"
-                  value={fileNameInput}
-                  onChange={(e) => setFileNameInput(e.target.value)}
-                  placeholder="e.g. income_certificate_savita.pdf"
-                  className="w-full px-3 py-2 border border-slate-200 rounded text-slate-700"
+                  type="file"
+                  required
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setFileNameInput(file.name);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-slate-200 rounded text-slate-700 bg-white cursor-pointer focus:outline-none"
                 />
               </div>
 
@@ -694,7 +713,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Digital Locker & Verification Status</h2>
             
             <div className="space-y-3">
-              {citizenDocs.map((doc) => {
+              {filteredDocs.map((doc) => {
                 const isVerified = doc.status === 'Verified';
                 const isPending = doc.status === 'Pending Verification';
 
