@@ -9,9 +9,14 @@ import {
   Plus, 
   Bot, 
   Send, 
-  Sparkles
+  Sparkles,
+  FolderOpen,
+  Check,
+  X,
+  ExternalLink,
+  FileText
 } from 'lucide-react';
-import { SCHEMES, GRIEVANCES, MAP_CENTER } from '../data/mockData';
+import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS } from '../data/mockData';
 import type { Grievance } from '../data/mockData';
 
 interface CitizenPortalProps {
@@ -37,6 +42,12 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [eligibleSchemesList, setEligibleSchemesList] = useState<any[]>([]);
   const [checked, setChecked] = useState(false);
 
+  // Document locker variables
+  const [citizenDocs, setCitizenDocs] = useState(CITIZEN_DOCUMENTS);
+  const [docTypeInput, setDocTypeInput] = useState('Income Certificate');
+  const [fileNameInput, setFileNameInput] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
   // Chatbot State
   const [chatInput, setChatInput] = useState('');
   const [chatLog, setChatLog] = useState([
@@ -58,26 +69,83 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   const [grvDesc, setGrvDesc] = useState('');
   const [grvWard, setGrvWard] = useState(1);
 
-  // Scheme calculator evaluator
+  // Document upload handler
+  const handleDocUpload = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newDoc = {
+      id: `doc_${Date.now().toString().substring(8)}`,
+      citizenName: 'Savita Patil', // mock citizen name
+      docType: docTypeInput,
+      docTypeMr: docTypeInput === 'Income Certificate' ? 'उत्पन्नाचा दाखला' : docTypeInput === 'Aadhaar Card' ? 'आधार कार्ड' : '७/१२ उतारा',
+      fileName: fileNameInput || `${docTypeInput.toLowerCase().replace(/\s+/g, '_')}_savita.pdf`,
+      submittedDate: new Date().toISOString().split('T')[0],
+      status: 'Pending Verification' as any,
+      statusMr: 'पडताळणी प्रलंबित'
+    };
+    
+    // Add to the front of shared data array
+    CITIZEN_DOCUMENTS.unshift(newDoc);
+    setCitizenDocs([...CITIZEN_DOCUMENTS]);
+    setFileNameInput('');
+    setUploadSuccess(true);
+    setTimeout(() => setUploadSuccess(false), 3000);
+  };
+
+  // Scheme calculator evaluator returning ALL schemes with explanations
   const handleCheckEligibility = (e: React.FormEvent) => {
     e.preventDefault();
     const age = Number(ageInput) || 0;
     const income = Number(incomeInput) || 0;
 
-    const matches = SCHEMES.filter(s => {
+    const matches = SCHEMES.map(s => {
+      const reasons: string[] = [];
+      const reasonsMr: string[] = [];
+
       // Age Check
-      if (s.id === 'scheme_sr_citizen' && age < s.minAge) return false;
-      
+      if (s.id === 'scheme_sr_citizen' && age < s.minAge) {
+        reasons.push(`Age is ${age}, but must be at least ${s.minAge} years.`);
+        reasonsMr.push(`वय ${age} आहे, पण किमान ${s.minAge} वर्षे असणे आवश्यक आहे.`);
+      }
+
       // Income Check
-      if (income > s.maxIncome) return false;
+      if (income > s.maxIncome) {
+        reasons.push(`Annual income of ₹${income.toLocaleString()} exceeds the limit of ₹${s.maxIncome.toLocaleString()}.`);
+        reasonsMr.push(`वार्षिक उत्पन्न ₹${income.toLocaleString()} हे मर्यादा ₹${s.maxIncome.toLocaleString()} पेक्षा जास्त आहे.`);
+      }
 
       // Gender Check
-      if (s.genderRestriction && s.genderRestriction !== genderInput) return false;
+      if (s.genderRestriction && s.genderRestriction !== genderInput) {
+        reasons.push(`Restricted to ${s.genderRestriction} applicants.`);
+        reasonsMr.push(`केवळ ${s.genderRestriction === 'Female' ? 'महिला' : 'पुरुष'} अर्जदारांसाठी मर्यादित.`);
+      }
 
-      // Occupation Check
-      if (s.id === 'scheme_krishi_sinchan' && !farmerInput) return false;
+      // Farmer Check
+      if (s.id === 'scheme_krishi_sinchan' && !farmerInput) {
+        reasons.push('Must be a registered farmer.');
+        reasonsMr.push('नोंदणीकृत शेतकरी असणे आवश्यक आहे.');
+      }
 
-      return true;
+      const isEligible = reasons.length === 0;
+
+      // Simulated form directions
+      let formHelp = 'Submit documents at Panchayat Digital Center (Ward 2)';
+      let formHelpMr = 'ग्रामपंचायत डिजिटल सेवा केंद्र (वॉर्ड २) येथे कागदपत्रे सादर करा';
+      if (s.id === 'scheme_krishi_sinchan') {
+        formHelp = 'Apply online via MahaDBT Farmer Portal or visit Ward 4 Agriculture Cell';
+        formHelpMr = 'महाडीबीटी शेतकरी पोर्टलवर ऑनलाईन अर्ज करा किंवा वॉर्ड ४ मधील कृषी विभाग';
+      } else if (s.id === 'scheme_pm_awas') {
+        formHelp = 'Submit physical application form to Gram Sevak Desk (Room 3)';
+        formHelpMr = 'ग्रामसेवक कक्ष (खोली ३) कडे प्रत्यक्ष अर्ज सादर करा';
+      }
+
+      return {
+        ...s,
+        isEligible,
+        reasons,
+        reasonsMr,
+        formHelp,
+        formHelpMr
+      };
     });
 
     setEligibleSchemesList(matches);
@@ -89,7 +157,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     e.preventDefault();
     if (!grvTitle.trim() || !grvDesc.trim()) return;
 
-    // Direct classification
     const text = (grvTitle + ' ' + grvDesc).toLowerCase();
     let cat: Grievance['category'] = 'Other';
     let catMr = 'इतर';
@@ -134,7 +201,6 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     GRIEVANCES.unshift(newGrv); // Sync with shared database
     setActiveGrievanceId(newGrv.id);
     
-    // Reset Form
     setGrvTitle('');
     setGrvDesc('');
     setGrvWard(1);
@@ -252,27 +318,34 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
               </p>
             </div>
             
-            <div className="grid grid-cols-3 gap-2.5 pt-4">
+            <div className="grid grid-cols-4 gap-2 pt-4">
               <button 
                 onClick={() => setCurrentTab('schemes')}
-                className="p-3 bg-govblue-50 border border-govblue-200 hover:bg-govblue-100 text-govnavy rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
+                className="p-2.5 bg-govblue-50 border border-govblue-200 hover:bg-govblue-100 text-govnavy rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
-                <Award size={18} className="mx-auto text-govnavy" />
-                <span className="block text-[10px]">Welfare Schemes</span>
+                <Award size={16} className="mx-auto text-govnavy" />
+                <span className="block text-[9px]">Welfare Schemes</span>
               </button>
               <button 
                 onClick={() => setCurrentTab('grievances')}
-                className="p-3 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
+                className="p-2.5 bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
-                <Plus size={18} className="mx-auto text-rose-600" />
-                <span className="block text-[10px]">File Grievance</span>
+                <Plus size={16} className="mx-auto text-rose-600" />
+                <span className="block text-[9px]">File Grievance</span>
+              </button>
+              <button 
+                onClick={() => setCurrentTab('documents')}
+                className="p-2.5 bg-emerald-50 border border-emerald-250 hover:bg-emerald-100 text-govgreen rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
+              >
+                <FolderOpen size={16} className="mx-auto text-govgreen" />
+                <span className="block text-[9px]">Digital Locker</span>
               </button>
               <button 
                 onClick={() => setCurrentTab('ai_assistant')}
-                className="p-3 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-govsaffron rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
+                className="p-2.5 bg-orange-50 border border-orange-200 hover:bg-orange-100 text-govsaffron rounded-lg text-center font-bold text-xs space-y-1.5 transition-colors"
               >
-                <Bot size={18} className="mx-auto text-govsaffron" />
-                <span className="block text-[10px]">AI Helpdesk</span>
+                <Bot size={16} className="mx-auto text-govsaffron" />
+                <span className="block text-[9px]">AI Helpdesk</span>
               </button>
             </div>
           </div>
@@ -332,16 +405,16 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white rounded font-bold transition-all shadow"
+                className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white font-bold transition-all shadow"
               >
                 Check Qualifying Schemes
               </button>
             </form>
           </div>
 
-          {/* Results List */}
+          {/* Results List with Detailed Disqualifications & Application Form info */}
           <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Matching Welfare Subsidies</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Matching Welfare Subsidies & Apply Locations</h2>
             
             {!checked ? (
               <div className="p-10 text-center text-slate-400 text-xs">
@@ -352,25 +425,69 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                 No schemes matches found for this profile.
               </div>
             ) : (
-              <div className="space-y-3">
-                {eligibleSchemesList.map((scheme, idx) => (
-                  <div key={idx} className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-1.5">
-                      <strong className="text-sm font-bold text-govblue-900 block">
-                        {i18n.language === 'en' ? scheme.name : scheme.nameMr}
-                      </strong>
-                      <p className="text-xs text-slate-500 leading-normal">
-                        {i18n.language === 'en' ? scheme.description : scheme.descriptionMr}
-                      </p>
+              <div className="space-y-4">
+                {eligibleSchemesList.map((scheme, idx) => {
+                  const isEligible = scheme.isEligible;
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`p-4 rounded-lg border flex flex-col justify-between gap-3 ${
+                        isEligible 
+                          ? 'bg-emerald-50/40 border-emerald-200' 
+                          : 'bg-rose-50/20 border-rose-150'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            {isEligible ? (
+                              <Check className="text-emerald-600 flex-shrink-0" size={16} />
+                            ) : (
+                              <X className="text-rose-600 flex-shrink-0" size={16} />
+                            )}
+                            <strong className={`text-sm font-bold block ${isEligible ? 'text-govblue-900' : 'text-slate-700'}`}>
+                              {i18n.language === 'en' ? scheme.name : scheme.nameMr}
+                            </strong>
+                          </div>
+                          <p className="text-xs text-slate-500 leading-normal">
+                            {i18n.language === 'en' ? scheme.description : scheme.descriptionMr}
+                          </p>
+                        </div>
+                        <div className="text-left sm:text-right flex-shrink-0">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Estimated Benefit</span>
+                          <strong className="text-xs font-black text-govgreen block mt-0.5">
+                            {i18n.language === 'en' ? scheme.benefit : scheme.benefitMr}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {/* Criteria Explanation & Fill-Form Direction */}
+                      <div className="border-t border-slate-200/50 pt-2.5 text-xs">
+                        {isEligible ? (
+                          <div className="space-y-1.5">
+                            <span className="text-emerald-700 font-bold block">✓ You qualify for this scheme!</span>
+                            <div className="flex items-center gap-1.5 text-slate-700 bg-emerald-50 border border-emerald-100 p-2 rounded">
+                              <ExternalLink size={12} className="text-govgreen" />
+                              <span>
+                                <strong>Where to apply:</strong> {i18n.language === 'en' ? scheme.formHelp : scheme.formHelpMr}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <span className="text-rose-700 font-bold block">✗ Disqualification Reasons:</span>
+                            <div className="bg-rose-50 border border-rose-100 p-2 rounded text-slate-650 space-y-1 font-semibold text-[11px]">
+                              {i18n.language === 'en' 
+                                ? scheme.reasons.map((r: string, rIdx: number) => <div key={rIdx}>• {r}</div>)
+                                : scheme.reasonsMr.map((r: string, rIdx: number) => <div key={rIdx}>• {r}</div>)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <span className="text-[10px] text-govgreen font-bold uppercase tracking-wider block">Estimated Benefit</span>
-                      <strong className="text-sm font-black text-govgreen block mt-0.5">
-                        {i18n.language === 'en' ? scheme.benefit : scheme.benefitMr}
-                      </strong>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -518,6 +635,108 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Digital Document Locker view (NEW) */}
+      {currentTab === 'documents' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Upload Document Form */}
+          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Upload Document for Verification</h2>
+            
+            {uploadSuccess && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                <Check size={14} />
+                <span>Uploaded! Awaiting officer audit.</span>
+              </div>
+            )}
+
+            <form onSubmit={handleDocUpload} className="space-y-4 text-xs font-semibold">
+              <div className="space-y-1.5">
+                <label className="text-slate-500 block">Select Document Type / दस्तऐवजाचा प्रकार</label>
+                <select
+                  value={docTypeInput}
+                  onChange={(e) => setDocTypeInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded"
+                >
+                  <option value="Income Certificate">Income Certificate / उत्पन्नाचा दाखला</option>
+                  <option value="Aadhaar Card">Aadhaar Card / आधार कार्ड</option>
+                  <option value="Land ownership 7/12 Extract">Land ownership 7/12 Extract / ७/१२ उतारा</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-slate-500 block">Mock File Name / फाईलचे नाव</label>
+                <input
+                  type="text"
+                  value={fileNameInput}
+                  onChange={(e) => setFileNameInput(e.target.value)}
+                  placeholder="e.g. income_certificate_savita.pdf"
+                  className="w-full px-3 py-2 border border-slate-200 rounded text-slate-700"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-govnavy hover:bg-govblue-700 text-white rounded font-bold transition-all shadow flex items-center justify-center gap-1.5"
+              >
+                <FolderOpen size={14} />
+                <span>Upload to Panchayat Database</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Uploaded Documents List */}
+          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">Digital Locker & Verification Status</h2>
+            
+            <div className="space-y-3">
+              {citizenDocs.map((doc) => {
+                const isVerified = doc.status === 'Verified';
+                const isPending = doc.status === 'Pending Verification';
+
+                return (
+                  <div 
+                    key={doc.id}
+                    className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded flex items-center justify-center border ${
+                        isVerified 
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-150' 
+                          : isPending
+                            ? 'bg-amber-50 text-amber-600 border-amber-150'
+                            : 'bg-rose-50 text-rose-600 border-rose-150'
+                      }`}>
+                        <FileText size={16} />
+                      </div>
+                      <div>
+                        <strong className="text-xs font-bold text-slate-800 block">
+                          {i18n.language === 'en' ? doc.docType : doc.docTypeMr}
+                        </strong>
+                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                          File: {doc.fileName} • Date: {doc.submittedDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider border ${
+                        isVerified 
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                          : isPending 
+                            ? 'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
+                            : 'bg-rose-50 text-rose-600 border-rose-200'
+                      }`}>
+                        {isVerified ? 'Verified & Stored' : isPending ? 'Pending Audit' : 'Rejected'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

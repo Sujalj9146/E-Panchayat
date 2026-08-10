@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Globe,
-  LogOut
+  LogOut,
+  FolderOpen
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -44,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: i18n.language === 'en' ? 'Public Info' : 'सार्वजनिक माहिती', icon: LayoutDashboard },
     { id: 'schemes', label: i18n.language === 'en' ? 'Welfare Schemes' : 'कल्याणकारी योजना', icon: Landmark },
     { id: 'grievances', label: i18n.language === 'en' ? 'Track Grievances' : 'तक्रारींचा मागोवा', icon: Megaphone },
+    { id: 'documents', label: i18n.language === 'en' ? 'Digital Locker' : 'डिजिटल लॉकर', icon: FolderOpen },
     { id: 'ai_assistant', label: i18n.language === 'en' ? 'AI Helpdesk' : 'AI मदत कक्ष', icon: Bot, isAI: true }
   ] : [
     { id: 'dashboard', label: t('nav.dashboard'), icon: LayoutDashboard },

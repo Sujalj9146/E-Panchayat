@@ -7,8 +7,9 @@ import {
   HelpCircle,
   Sparkles
 } from 'lucide-react';
-import { CITIZENS, SCHEMES } from '../data/mockData';
+import { CITIZENS, SCHEMES, GOV_SCHEMES_FEED } from '../data/mockData';
 import type { Citizen } from '../data/mockData';
+import { Check, X as CloseIcon } from 'lucide-react';
 
 
 export const BeneficiaryRecommendations: React.FC = () => {
@@ -17,6 +18,41 @@ export const BeneficiaryRecommendations: React.FC = () => {
   const [selectedWard, setSelectedWard] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [selectedCitizen, setSelectedCitizen] = useState<Citizen | null>(null);
+  const [schemeFeed, setSchemeFeed] = useState(GOV_SCHEMES_FEED);
+
+  const handleApproveScheme = (id: string) => {
+    const schemeIndex = GOV_SCHEMES_FEED.findIndex(s => s.id === id);
+    if (schemeIndex !== -1) {
+      const s = GOV_SCHEMES_FEED[schemeIndex];
+      GOV_SCHEMES_FEED[schemeIndex].status = 'Approved';
+      
+      // Push to active scheme list
+      const exists = SCHEMES.find(active => active.id === s.id);
+      if (!exists) {
+        SCHEMES.push({
+          id: s.id,
+          name: s.name,
+          nameMr: s.nameMr,
+          description: s.description,
+          descriptionMr: s.descriptionMr,
+          minAge: s.minAge,
+          maxIncome: s.maxIncome,
+          genderRestriction: s.genderRestriction,
+          benefit: s.benefit,
+          benefitMr: s.benefitMr
+        });
+      }
+      setSchemeFeed([...GOV_SCHEMES_FEED]);
+    }
+  };
+
+  const handleRejectScheme = (id: string) => {
+    const schemeIndex = GOV_SCHEMES_FEED.findIndex(s => s.id === id);
+    if (schemeIndex !== -1) {
+      GOV_SCHEMES_FEED[schemeIndex].status = 'Rejected';
+      setSchemeFeed([...GOV_SCHEMES_FEED]);
+    }
+  };
 
   const activeScheme = useMemo(() => {
     return SCHEMES.find(s => s.id === selectedSchemeId) || SCHEMES[0];
@@ -103,6 +139,50 @@ export const BeneficiaryRecommendations: React.FC = () => {
         <h1 className="text-2xl font-bold text-white tracking-wide m-0">{t('beneficiary.title')}</h1>
         <p className="text-xs text-slate-500 mt-1">Cross-referencing citizen database against scheme policies using automated rules engine.</p>
       </div>
+
+      {/* AI government scheme feed */}
+      {schemeFeed.some(s => s.status === 'Pending') && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 border-t-4 border-govsaffron space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-govsaffron animate-pulse" />
+            <h3 className="text-xs font-bold text-govblue-900 uppercase tracking-wider">🔔 AI Government Schemes Crawl Feed (Awaiting Approval)</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {schemeFeed.filter(s => s.status === 'Pending').map((s) => (
+              <div key={s.id} className="p-3.5 bg-slate-50 border border-slate-200 rounded flex flex-col justify-between space-y-3 text-left">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-4">
+                    <strong className="text-xs font-bold text-govnavy">{i18n.language === 'en' ? s.name : s.nameMr}</strong>
+                    <span className="px-2 py-0.5 rounded bg-orange-50 border border-orange-200 text-govsaffron text-[9px] font-bold uppercase tracking-wider">New</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-normal">{i18n.language === 'en' ? s.description : s.descriptionMr}</p>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400 font-semibold pt-1">
+                    <span>Source: {s.sourceGov}</span>
+                    <span>•</span>
+                    <span>Benefit: {i18n.language === 'en' ? s.benefit : s.benefitMr}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 justify-end border-t border-slate-200/60 pt-2.5">
+                  <button
+                    onClick={() => handleRejectScheme(s.id)}
+                    className="px-2.5 py-1 text-[10px] font-bold text-rose-600 hover:bg-rose-50 rounded flex items-center gap-1 transition-colors"
+                  >
+                    <CloseIcon size={12} />
+                    <span>Dismiss</span>
+                  </button>
+                  <button
+                    onClick={() => handleApproveScheme(s.id)}
+                    className="px-3 py-1 bg-govnavy hover:bg-govblue-700 text-white rounded text-[10px] font-bold flex items-center gap-1 transition-colors shadow-sm"
+                  >
+                    <Check size={12} />
+                    <span>Approve & Publish to Village</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filters Area */}
       <div className="glass-card rounded-xl border border-slate-800 p-5 grid grid-cols-1 md:grid-cols-3 gap-4">

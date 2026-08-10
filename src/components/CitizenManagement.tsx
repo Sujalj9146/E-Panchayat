@@ -10,7 +10,8 @@ import {
   ArrowRight,
   X
 } from 'lucide-react';
-import { CITIZENS, SCHEMES } from '../data/mockData';
+import { CITIZENS, SCHEMES, CITIZEN_DOCUMENTS } from '../data/mockData';
+import { Check, X as RejectIcon, FileCheck } from 'lucide-react';
 
 
 export const CitizenManagement: React.FC = () => {
@@ -20,6 +21,27 @@ export const CitizenManagement: React.FC = () => {
   const [ageFilter, setAgeFilter] = useState('all');
   const [occupationFilter, setOccupationFilter] = useState('all');
   const [selectedCitizenId, setSelectedCitizenId] = useState<string | null>(null);
+  
+  const [activeSubTab, setActiveSubTab] = useState<'directory' | 'verification'>('directory');
+  const [docList, setDocList] = useState(CITIZEN_DOCUMENTS);
+
+  const handleVerifyDoc = (id: string) => {
+    const docIndex = CITIZEN_DOCUMENTS.findIndex(d => d.id === id);
+    if (docIndex !== -1) {
+      CITIZEN_DOCUMENTS[docIndex].status = 'Verified';
+      CITIZEN_DOCUMENTS[docIndex].statusMr = 'पडताळणी पूर्ण';
+      setDocList([...CITIZEN_DOCUMENTS]);
+    }
+  };
+
+  const handleRejectDoc = (id: string) => {
+    const docIndex = CITIZEN_DOCUMENTS.findIndex(d => d.id === id);
+    if (docIndex !== -1) {
+      CITIZEN_DOCUMENTS[docIndex].status = 'Rejected';
+      CITIZEN_DOCUMENTS[docIndex].statusMr = 'अस्वीकृत';
+      setDocList([...CITIZEN_DOCUMENTS]);
+    }
+  };
 
   // Active citizen full profile
   const selectedCitizen = useMemo(() => {
@@ -68,10 +90,39 @@ export const CitizenManagement: React.FC = () => {
     <div className="space-y-6">
       {/* Title */}
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-wide m-0">{t('citizens_page.title')}</h1>
-        <p className="text-xs text-slate-500 mt-1">Village population database with family linkage models and automated welfare assessment.</p>
+        <h1 className="text-2xl font-bold text-white tracking-wide m-0">{t('citizens.title')}</h1>
+        <p className="text-xs text-slate-500 mt-1">Search official databases, visualize family relations, and audit uploaded citizen records.</p>
       </div>
 
+      {/* Sub-tab navigation */}
+      <div className="flex border-b border-slate-800 gap-6 mb-2 select-none">
+        <button
+          onClick={() => setActiveSubTab('directory')}
+          className={`pb-2.5 text-xs font-bold uppercase tracking-wider transition-all focus:outline-none ${
+            activeSubTab === 'directory' 
+              ? 'border-b-2 border-indigo-500 text-indigo-400 font-black' 
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          👥 Citizen Directory
+        </button>
+        <button
+          onClick={() => setActiveSubTab('verification')}
+          className={`pb-2.5 text-xs font-bold uppercase tracking-wider transition-all focus:outline-none relative flex items-center gap-1.5 ${
+            activeSubTab === 'verification' 
+              ? 'border-b-2 border-indigo-500 text-indigo-400 font-black' 
+              : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <span>📂 Document Verification Queue</span>
+          {docList.some(d => d.status === 'Pending Verification') && (
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+          )}
+        </button>
+      </div>
+
+      {activeSubTab === 'directory' ? (
+        <>
       {/* Search & Filters */}
       <div className="glass-card rounded-xl border border-slate-800 p-5 space-y-4">
         {/* Search Input */}
@@ -303,6 +354,89 @@ export const CitizenManagement: React.FC = () => {
           </div>
         )}
       </div>
+      </>
+      ) : (
+        /* Document Verification Queue View */
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden border-t-4 border-govnavy">
+          <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+              {docList.filter(d => d.status === 'Pending Verification').length} Pending Documents for Audit
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            {docList.length === 0 ? (
+              <div className="p-10 text-center text-slate-400 text-xs">
+                No documents uploaded in verification queue yet.
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-slate-500 font-bold select-none">
+                    <th className="p-4">Citizen Name</th>
+                    <th className="p-4">Document Type</th>
+                    <th className="p-4">Attached File</th>
+                    <th className="p-4">Submitted Date</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 text-right">Audit Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {docList.map((doc) => {
+                    const isPending = doc.status === 'Pending Verification';
+                    const isVerified = doc.status === 'Verified';
+
+                    return (
+                      <tr key={doc.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-4 font-bold text-slate-800">{doc.citizenName}</td>
+                        <td className="p-4 text-slate-600 font-semibold">{i18n.language === 'en' ? doc.docType : doc.docTypeMr}</td>
+                        <td className="p-4 font-mono text-[11px] text-govnavy font-bold">{doc.fileName}</td>
+                        <td className="p-4 text-slate-500">{doc.submittedDate}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            isVerified
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              : doc.status === 'Rejected'
+                                ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                : 'bg-amber-50 text-amber-600 border-amber-200 animate-pulse'
+                          }`}>
+                            {i18n.language === 'en' ? doc.status : doc.statusMr}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          {isPending ? (
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <button
+                                onClick={() => handleRejectDoc(doc.id)}
+                                className="p-1 rounded text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-250 transition-colors"
+                                title="Reject Document"
+                              >
+                                <RejectIcon size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleVerifyDoc(doc.id)}
+                                className="p-1 rounded text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-250 transition-colors"
+                                title="Verify & Save to Database"
+                              >
+                                <Check size={14} />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 justify-end">
+                              <FileCheck size={12} className="text-emerald-500" />
+                              <span>Audit Complete</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -528,10 +528,93 @@ export const MOCK_SABHA_MEETING: SabhaMeeting = {
 };
 
 // Facility Coordinates for GIS map (fixed assets)
+// Facility Coordinates for GIS map (fixed assets)
 export const GIS_FACILITIES = [
   { id: 'fac_1', name: 'Zilla Parishad Primary School', nameMr: 'जिल्हा परिषद प्राथमिक शाळा', type: 'school', coordinates: [18.2875, 73.8635], details: 'Grades 1-7, 185 students enrolled' },
   { id: 'fac_2', name: 'Khed Shivapur Primary Health Sub-centre', nameMr: 'खेड शिवापूर प्राथमिक आरोग्य उपकेंद्र', type: 'health', coordinates: [18.2915, 73.8660], details: 'OPD, basic emergency beds, vaccine distribution' },
   { id: 'fac_3', name: 'Public Drinking Water Well & Purifier', nameMr: 'सार्वजनिक विहीर आणि जलशुद्धीकरण केंद्र', type: 'water', coordinates: [18.2890, 73.8650], details: 'RO treatment unit, capacity 10,000 LPD' },
   { id: 'fac_4', name: 'Anganwadi Child Care Center', nameMr: 'अंगणवाडी बाल संगोपन केंद्र', type: 'health', coordinates: [18.2880, 73.8625], details: 'Serving 45 children, midday meal kitchen' },
   { id: 'fac_5', name: 'Water Tank Hilltop Station', nameMr: 'टेकडीवरील पाण्याची टाकी', type: 'water', coordinates: [18.2863, 73.8620], details: 'Distribution source for Ward 1' }
+];
+
+export interface GovernmentSchemeFeed {
+  id: string;
+  name: string;
+  nameMr: string;
+  description: string;
+  descriptionMr: string;
+  minAge: number;
+  maxIncome: number;
+  genderRestriction?: 'Male' | 'Female';
+  benefit: string;
+  benefitMr: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  formUrl: string;
+  sourceGov: string;
+}
+
+export interface CitizenDocument {
+  id: string;
+  citizenName: string;
+  docType: string;
+  docTypeMr: string;
+  fileName: string;
+  submittedDate: string;
+  status: 'Pending Verification' | 'Verified' | 'Rejected';
+  statusMr: string;
+}
+
+export const GOV_SCHEMES_FEED: GovernmentSchemeFeed[] = [
+  {
+    id: 'scheme_solar_pump',
+    name: 'Chief Minister Solar Agriculture Pump Subsidies',
+    nameMr: 'मुख्यमंत्री सौर कृषी पंप योजना',
+    description: 'Provides 90% subsidy on solar water pumps for remote rural farmers.',
+    descriptionMr: 'दुर्गम ग्रामीण शेतकऱ्यांसाठी सौर पाण्याच्या पंपांवर ९०% अनुदान प्रदान करते.',
+    minAge: 18,
+    maxIncome: 250000,
+    benefit: '90% Pump Subsidy',
+    benefitMr: '९०% पंप अनुदान',
+    status: 'Pending',
+    formUrl: 'https://mahadiscom.in/solar-pump',
+    sourceGov: 'MahaGov Portal'
+  },
+  {
+    id: 'scheme_lado_devona',
+    name: 'Lado Devona Scheme for Girl Child Education',
+    nameMr: 'लाडो देवना कन्या शिक्षण योजना',
+    description: 'Financial aid support for higher secondary and college-going female students.',
+    descriptionMr: 'उच्च माध्यमिक आणि महाविद्यालयात जाणाऱ्या विद्यार्थिनींसाठी आर्थिक सहाय्य.',
+    minAge: 16,
+    maxIncome: 120000,
+    genderRestriction: 'Female',
+    benefit: '₹25,000 One-time',
+    benefitMr: '₹२५,००० एकवेळचे',
+    status: 'Pending',
+    formUrl: 'https://maharashtra.gov.in/lado-devona',
+    sourceGov: 'Ministry of Women and Child Development'
+  }
+];
+
+export const CITIZEN_DOCUMENTS: CitizenDocument[] = [
+  {
+    id: 'doc_101',
+    citizenName: 'Savita Patil',
+    docType: 'Income Certificate',
+    docTypeMr: 'उत्पन्नाचा दाखला',
+    fileName: 'income_certificate_savita.pdf',
+    submittedDate: '2026-08-09',
+    status: 'Pending Verification',
+    statusMr: 'पडताळणी प्रलंबित'
+  },
+  {
+    id: 'doc_102',
+    citizenName: 'Amit Shinde',
+    docType: 'Land ownership 7/12 Extract',
+    docTypeMr: '७/१२ उतारा',
+    fileName: '7_12_extract_amit.pdf',
+    submittedDate: '2026-08-10',
+    status: 'Pending Verification',
+    statusMr: 'पडताळणी प्रलंबित'
+  }
 ];
