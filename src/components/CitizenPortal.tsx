@@ -389,7 +389,7 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-govgreen/10 text-govgreen text-[10px] font-bold uppercase tracking-wider border border-govgreen/15 select-none">
             <span>Citizen Public Services Access</span>
           </div>
-          <h1 className="text-xl font-bold text-govblue-900 m-0">Khed Shivapur Citizen Facilitation Portal</h1>
+          <h1 className="text-xl font-bold text-govblue-900 m-0">Loni Kalbhor Citizen Facilitation Portal</h1>
           <p className="text-slate-500 text-xs leading-relaxed">
             Welcome to the public-facing citizen kiosk. From this panel, you can check your eligibility for welfare subsidies, file and track public complaints, view contact logs, and chat with our local AI helpdesk.
           </p>

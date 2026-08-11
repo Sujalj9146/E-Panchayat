@@ -85,8 +85,8 @@ export interface SabhaMeeting {
   }[];
 }
 
-// Map coordinates centered around Khed Shivapur, Pune, Maharashtra (18.2891, 73.8647)
-export const MAP_CENTER: [number, number] = [18.2891, 73.8647];
+// Map coordinates centered around Loni Kalbhor, Pune, Maharashtra (18.4907, 73.9806)
+export const MAP_CENTER: [number, number] = [18.4907, 73.9806];
 
 export const SCHEMES: Scheme[] = [
   {
@@ -334,11 +334,11 @@ export const GRIEVANCES: Grievance[] = [
     status: 'Pending',
     statusMr: 'प्रलंबित',
     submittedDate: '2026-08-08',
-    description: 'The primary tube-well near the Khed Shivapur Maruti Temple has been leaking water for 3 days, causing waterlogging and low pressure in Ward 3 houses.',
-    descriptionMr: 'खेड शिवापूर मारुती मंदिराजवळील मुख्य कूपनलिका गेल्या ३ दिवसांपासून गळती होत आहे, ज्यामुळे रस्ता चिखलमय झाला आहे आणि वॉर्ड ३ मधील घरांमध्ये कमी दाबाने पाणी येत आहे.',
+    description: 'The primary tube-well near the Loni Kalbhor Maruti Temple has been leaking water for 3 days, causing waterlogging and low pressure in Ward 3 houses.',
+    descriptionMr: 'लोणी काळभोर मारुती मंदिराजवळील मुख्य कूपनलिका गेल्या ३ दिवसांपासून गळती होत आहे, ज्यामुळे रस्ता चिखलमय झाला आहे आणि वॉर्ड ३ मधील घरांमध्ये कमी दाबाने पाणी येत आहे.',
     deptName: 'Water Supply and Sanitation Department',
     deptNameMr: 'पाणी पुरवठा आणि स्वच्छता विभाग',
-    coordinates: [18.2895, 73.8652]
+    coordinates: [18.4911, 73.9811]
   },
   {
     id: 'grv_202',
@@ -356,7 +356,7 @@ export const GRIEVANCES: Grievance[] = [
     descriptionMr: 'प्राथमिक शाळेच्या प्रवेश रस्त्यावरील ४ स्ट्रीट लाईट चालू नाहीत. संध्याकाळी सुरक्षिततेची अडचण निर्माण होत आहे.',
     deptName: 'MSEB Rural Division (Panchayat Wing)',
     deptNameMr: 'एमएसईबी ग्रामीण विभाग (पंचायत शाखा)',
-    coordinates: [18.2872, 73.8631]
+    coordinates: [18.4888, 73.9790]
   },
   {
     id: 'grv_203',
@@ -374,7 +374,7 @@ export const GRIEVANCES: Grievance[] = [
     descriptionMr: 'मुसळधार पावसामुळे वॉर्ड ३ मधील काँक्रीट लिंक रोडवर खोल खड्डे पडले आहेत. दुचाकीस्वार घसरून पडत आहेत.',
     deptName: 'Public Works Department (Rural Roads)',
     deptNameMr: 'सार्वजनिक बांधकाम विभाग (ग्रामीण रस्ते)',
-    coordinates: [18.2882, 73.8659]
+    coordinates: [18.4898, 73.9818]
   },
   {
     id: 'grv_204',
@@ -392,7 +392,7 @@ export const GRIEVANCES: Grievance[] = [
     descriptionMr: 'आठवडे बाजाराच्या चौकातील गटाराच्या वाहिनीमध्ये प्लास्टिक कचरा अडकल्याने पाणी तुंबले आहे. सांडपाणी बाजारातील दुकानांमध्ये पसरत असून दुर्गंधी पसरली आहे.',
     deptName: 'Panchayat Health & Sanitation Cell',
     deptNameMr: 'पंचायत आरोग्य व स्वच्छता कक्ष',
-    coordinates: [18.2899, 73.8641]
+    coordinates: [18.4915, 73.9800]
   },
   {
     id: 'grv_205',
@@ -410,7 +410,7 @@ export const GRIEVANCES: Grievance[] = [
     descriptionMr: 'ताप आणि सर्पदंशावरील मूलभूत औषधांचा साठा संपला होता. औषध पुरवठ्याची मागणी पूर्ण करण्यात आली आहे.',
     deptName: 'District Health Administration Office',
     deptNameMr: 'जिल्हा आरोग्य प्रशासन कार्यालय',
-    coordinates: [18.2912, 73.8665]
+    coordinates: [18.4928, 73.9824]
   }
 ];
 
@@ -429,7 +429,7 @@ export const PROJECTS: Project[] = [
     locationMr: 'वॉर्ड ३, शिवापूर रस्ता ते शाळा गल्ली',
     description: 'Upgrading the muddy lane to a full-width durable cement concrete road with standard side drainage blocks.',
     descriptionMr: 'चिखलाची गल्ली सर्व रुंदीच्या मजबूत सिमेंट काँक्रीट रस्त्यामध्ये बाजूच्या गटारांसह अद्ययावत करणे.',
-    coordinates: [18.2885, 73.8655]
+    coordinates: [18.4901, 73.9814]
   },
   {
     id: 'proj_302',
@@ -445,7 +445,7 @@ export const PROJECTS: Project[] = [
     locationMr: 'वॉर्ड २, मुख्य ग्रामपंचायत कार्यालय इमारत',
     description: 'Equipping the office with high speed fiber internet, citizen service kiosks, printers and computers for digital certificates delivery.',
     descriptionMr: 'डिजिटल प्रमाणपत्रे वितरणासाठी कार्यालयात हाय-स्पीड फायबर इंटरनेट, नागरी सेवा किओस्क, प्रिंटर आणि संगणक सुसज्ज करणे.',
-    coordinates: [18.2891, 73.8647]
+    coordinates: [18.4907, 73.9806]
   },
   {
     id: 'proj_303',
@@ -461,7 +461,7 @@ export const PROJECTS: Project[] = [
     locationMr: 'वॉर्ड १, टेकडी परिसर आणि वसाहत विस्तार',
     description: 'Constructing a 50,000-liter overhead storage tank and laying PVC water pipes to 120 new housing units.',
     descriptionMr: '५०,००० लिटर क्षमतेची उंचावरील पाण्याची टाकी बांधणे आणि १२० नवीन घरांना पीव्हीसी पाण्याचे पाईप्स टाकणे.',
-    coordinates: [18.2865, 73.8622]
+    coordinates: [18.4881, 73.9781]
   },
   {
     id: 'proj_304',
@@ -477,15 +477,15 @@ export const PROJECTS: Project[] = [
     locationMr: 'वॉर्ड २, खेड प्राथमिक जिल्हा परिषद शाळा',
     description: 'Building an outer security compound wall and setting up a projector and computer lab for student learning.',
     descriptionMr: 'बाहेरील सुरक्षा कंपाऊंड भिंत बांधणे आणि विद्यार्थ्यांच्या शिक्षणासाठी प्रोजेक्टर आणि संगणक लॅब उभारणे.',
-    coordinates: [18.2878, 73.8638]
+    coordinates: [18.4894, 73.9797]
   }
 ];
 
 export const MOCK_SABHA_MEETING: SabhaMeeting = {
   id: 'sabha_401',
   date: '2026-08-04',
-  title: 'Khed Shivapur Gram Sabha Monsoon Session',
-  titleMr: 'खेड शिवापूर ग्रामसभा पावसाळी अधिवेशन बैठक',
+  title: 'Loni Kalbhor Gram Sabha Monsoon Session',
+  titleMr: 'लोणी काळभोर ग्रामसभा पावसाळी अधिवेशन बैठक',
   summary: 'The assembly focused on local monsoon preparedness. Key discussions revolved around the drainage overflow in Ward 2 weekly market, repairing the potholes in the main Ward 3 road before festival season, installing additional LED streetlights on school lanes for security, and checking pipeline expansion under ongoing water projects.',
   summaryMr: 'या बैठकीत प्रामुख्याने पावसाळ्यातील पूर्वतयारी आणि स्थानिक समस्यांवर लक्ष केंद्रित करण्यात आले. वॉर्ड २ मधील आठवडे बाजारातील गटार तुंबण्याची समस्या, सणासुदीच्या काळापूर्वी वॉर्ड ३ मधील रस्त्यावरील खड्डे दुरुस्त करणे, सुरक्षेसाठी शाळेच्या गल्लीत नवीन एलईडी दिवे बसवणे आणि सुरू असलेल्या पाणी पुरवठा प्रकल्पाच्या पाईपलाईन विस्ताराची तपासणी करणे या विषयांवर सखोल चर्चा झाली.',
   decisions: [
@@ -532,11 +532,11 @@ export const MOCK_SABHA_MEETING: SabhaMeeting = {
 // Facility Coordinates for GIS map (fixed assets)
 // Facility Coordinates for GIS map (fixed assets)
 export const GIS_FACILITIES = [
-  { id: 'fac_1', name: 'Zilla Parishad Primary School', nameMr: 'जिल्हा परिषद प्राथमिक शाळा', type: 'school', coordinates: [18.2875, 73.8635], details: 'Grades 1-7, 185 students enrolled' },
-  { id: 'fac_2', name: 'Khed Shivapur Primary Health Sub-centre', nameMr: 'खेड शिवापूर प्राथमिक आरोग्य उपकेंद्र', type: 'health', coordinates: [18.2915, 73.8660], details: 'OPD, basic emergency beds, vaccine distribution' },
-  { id: 'fac_3', name: 'Public Drinking Water Well & Purifier', nameMr: 'सार्वजनिक विहीर आणि जलशुद्धीकरण केंद्र', type: 'water', coordinates: [18.2890, 73.8650], details: 'RO treatment unit, capacity 10,000 LPD' },
-  { id: 'fac_4', name: 'Anganwadi Child Care Center', nameMr: 'अंगणवाडी बाल संगोपन केंद्र', type: 'health', coordinates: [18.2880, 73.8625], details: 'Serving 45 children, midday meal kitchen' },
-  { id: 'fac_5', name: 'Water Tank Hilltop Station', nameMr: 'टेकडीवरील पाण्याची टाकी', type: 'water', coordinates: [18.2863, 73.8620], details: 'Distribution source for Ward 1' }
+  { id: 'fac_1', name: 'Zilla Parishad Primary School', nameMr: 'जिल्हा परिषद प्राथमिक शाळा', type: 'school', coordinates: [18.4891, 73.9794], details: 'Grades 1-7, 185 students enrolled' },
+  { id: 'fac_2', name: 'Loni Kalbhor Primary Health Sub-centre', nameMr: 'लोणी काळभोर प्राथमिक आरोग्य उपकेंद्र', type: 'health', coordinates: [18.4931, 73.9819], details: 'OPD, basic emergency beds, vaccine distribution' },
+  { id: 'fac_3', name: 'Public Drinking Water Well & Purifier', nameMr: 'सार्वजनिक विहीर आणि जलशुद्धीकरण केंद्र', type: 'water', coordinates: [18.4906, 73.9809], details: 'RO treatment unit, capacity 10,000 LPD' },
+  { id: 'fac_4', name: 'Anganwadi Child Care Center', nameMr: 'अंगणवाडी बाल संगोपन केंद्र', type: 'health', coordinates: [18.4896, 73.9784], details: 'Serving 45 children, midday meal kitchen' },
+  { id: 'fac_5', name: 'Water Tank Hilltop Station', nameMr: 'टेकडीवरील पाण्याची टाकी', type: 'water', coordinates: [18.4879, 73.9779], details: 'Distribution source for Ward 1' }
 ];
 
 export interface GovernmentSchemeFeed {

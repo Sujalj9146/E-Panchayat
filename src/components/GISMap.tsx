@@ -199,7 +199,7 @@ export const GISMap: React.FC = () => {
           />
           {/* GIS Coordinates floating banner */}
           <div className="absolute bottom-4 right-4 bg-slate-950/90 border border-slate-800 text-[10px] font-mono text-slate-400 px-2.5 py-1 rounded shadow-lg select-none z-20">
-            Center Lat: {MAP_CENTER[0]}, Lng: {MAP_CENTER[1]} (Khed Shivapur, Pune)
+            Center Lat: {MAP_CENTER[0]}, Lng: {MAP_CENTER[1]} (Loni Kalbhor, Pune)
           </div>
         </div>
 

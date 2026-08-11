@@ -163,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {role === 'officer' ? 'Panchayat Officer' : 'Village Citizen'}
                 </span>
                 <span className="text-[10px] text-slate-500 font-medium block truncate">
-                  {role === 'officer' ? 'Khed Shivapur GP' : 'Visitor Mode'}
+                  {role === 'officer' ? 'Loni Kalbhor GP' : 'Visitor Mode'}
                 </span>
               </div>
             )}

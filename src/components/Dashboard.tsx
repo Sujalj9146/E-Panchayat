@@ -145,8 +145,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </h1>
           <p className="text-slate-600 text-xs sm:text-sm leading-relaxed">
             {i18n.language === 'en' 
-              ? 'Official decision support system for Khed Shivapur Gram Panchayat. This portal integrates Citizen registries, Scheme recommendation filters, Grievance analytics, and Sabha documents to help representatives make data-backed decisions.'
-              : 'खेड शिवापूर ग्रामपंचायत अधिकृत निर्णय समर्थन प्रणाली. हे पोर्टल नागरिक नोंदणी, योजना शिफारस, तक्रार निवारण आणि ग्रामसभा दस्तऐवज एकत्रित करून पदाधिकाऱ्यांना अचूक निर्णय घेण्यास सहाय्य करते.'}
+              ? 'Official decision support system for Loni Kalbhor Gram Panchayat. This portal integrates Citizen registries, Scheme recommendation filters, Grievance analytics, and Sabha documents to help representatives make data-backed decisions.'
+              : 'लोणी काळभोर ग्रामपंचायत अधिकृत निर्णय समर्थन प्रणाली. हे पोर्टल नागरिक नोंदणी, योजना शिफारस, तक्रार निवारण आणि ग्रामसभा दस्तऐवज एकत्रित करून पदाधिकाऱ्यांना अचूक निर्णय घेण्यास सहाय्य करते.'}
           </p>
         </div>
       </div>

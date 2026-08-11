@@ -161,7 +161,7 @@ export const GrievanceManagement: React.FC = () => {
       descriptionMr: description,
       deptName: finalPredict.deptName,
       deptNameMr: finalPredict.deptNameMr,
-      // Random coordinates offset from Khed Shivapur center
+      // Random coordinates offset from Loni Kalbhor center
       coordinates: [
         MAP_CENTER[0] + (Math.random() - 0.5) * 0.008,
         MAP_CENTER[1] + (Math.random() - 0.5) * 0.008

@@ -490,9 +490,9 @@ export const CitizenManagement: React.FC = () => {
                   <div className="text-left text-[8px] font-bold text-slate-700 space-y-2 py-4">
                     <p className="leading-normal">
                       {i18n.language === 'en' ? (
-                        <>This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {previewCitizenProfile.ward}, Khed Shivapur, Pune, Maharashtra, has an annual family income of:</>
+                        <>This is to certify that <strong className="text-slate-900">{previewDoc.citizenName}</strong>, resident of Ward {previewCitizenProfile.ward}, Loni Kalbhor, Pune, Maharashtra, has an annual family income of:</>
                       ) : (
-                        <>प्रमाणित करण्यात येते की, <strong className="text-slate-900">{previewDoc.citizenName}</strong>, रा. वॉर्ड {previewCitizenProfile.ward}, खेड शिवापूर, हवेली, पुणे, महाराष्ट्र, यांचे एकूण कौटुंबिक वार्षिक उत्पन्न खालीलप्रमाणे आहे:</>
+                        <>प्रमाणित करण्यात येते की, <strong className="text-slate-900">{previewDoc.citizenName}</strong>, रा. वॉर्ड {previewCitizenProfile.ward}, लोणी काळभोर, हवेली, पुणे, महाराष्ट्र, यांचे एकूण कौटुंबिक वार्षिक उत्पन्न खालीलप्रमाणे आहे:</>
                       )}
                     </p>
                     <div className="text-center py-2.5 bg-amber-50 border border-dashed border-amber-800/40 rounded">
@@ -554,7 +554,7 @@ export const CitizenManagement: React.FC = () => {
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 border-b border-slate-200 pb-1 text-slate-700">
                       <span>{i18n.language === 'en' ? 'District: Pune' : 'जिल्हा: पुणे'}</span>
                       <span>{i18n.language === 'en' ? 'Taluka: Haveli' : 'तालुका: हवेली'}</span>
-                      <span>{i18n.language === 'en' ? 'Village: Khed Shivapur' : 'गाव: खेड शिवापूर'}</span>
+                      <span>{i18n.language === 'en' ? 'Village: Loni Kalbhor' : 'गाव: लोणी काळभोर'}</span>
                       <span>{i18n.language === 'en' ? 'Survey No: 184/A' : 'गट क्र: १८४/अ'}</span>
                     </div>
                     <p className="leading-normal">

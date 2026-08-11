@@ -100,7 +100,7 @@ function App() {
                 </div>
                 <div className="flex flex-col select-none">
                   <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">Ministry of Rural Development • Government of Maharashtra</span>
-                  <span className="font-extrabold text-govnavy tracking-tight text-lg">KHED SHIVAPUR GRAM PANCHAYAT</span>
+                  <span className="font-extrabold text-govnavy tracking-tight text-lg">LONI KALBHOR GRAM PANCHAYAT</span>
                   <span className="text-[10px] font-bold text-govsaffron uppercase tracking-widest mt-0.5">Decision Support Support Portal (DSS)</span>
                 </div>
               </div>
@@ -303,7 +303,7 @@ function App() {
           {/* National Informatics Centre (NIC) stamp footer */}
           <footer className="bg-white border-t border-slate-200 z-20 text-[11px] text-slate-500">
             <div className="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <span>© 2026 Khed Shivapur Gram Panchayat. Built for rural governance analytics.</span>
+              <span>© 2026 Loni Kalbhor Gram Panchayat. Built for rural governance analytics.</span>
               <div className="flex gap-4 font-bold text-slate-600">
                 <span className="select-none">Designed by National Informatics Centre (NIC) Mode</span>
                 <span>•</span>
@@ -346,7 +346,7 @@ function App() {
             <header className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between z-20 select-none shadow-sm">
               <div className="flex items-center gap-3">
                 {/* Small Emblem stamp */}
-                <span className="text-xs font-extrabold text-govblue-900 uppercase">Khed Shivapur Gram Panchayat Portal</span>
+                <span className="text-xs font-extrabold text-govblue-900 uppercase">Loni Kalbhor Gram Panchayat Portal</span>
                 <span className="bg-govgreen/10 text-govgreen text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase border border-govgreen/20">Active Session</span>
                 <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
                   <span className="text-[10px] font-bold text-slate-500">ACTIVE ROLE:</span>

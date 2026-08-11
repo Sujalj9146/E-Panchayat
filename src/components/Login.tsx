@@ -81,7 +81,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           
           {/* Form heading */}
           <div className="text-center space-y-1.5">
-            <h1 className="text-lg sm:text-xl font-black text-govblue-900 tracking-tight uppercase m-0">Khed Shivapur Gram Panchayat</h1>
+            <h1 className="text-lg sm:text-xl font-black text-govblue-900 tracking-tight uppercase m-0">Loni Kalbhor Gram Panchayat</h1>
             <p className="text-xs text-slate-500 font-medium">Secure Login Gate for Representatives & Village Citizens</p>
           </div>
 

@@ -155,10 +155,10 @@ export const AIAssistant: React.FC = () => {
         // Default response
         if (isEnglish) {
           aiResponseText = `I ran a GraphRAG query over the local knowledge graph but could not find a specific match for "${textToSend}". 
-          \nHere is a general summary: Khed Shivapur currently has 10 active citizens in the registry, 4 ongoing/completed infrastructure projects, and 5 logged grievances. Please try asking about 'water complaints', 'delayed projects', or 'senior pension eligibility'.`;
+          \nHere is a general summary: Loni Kalbhor currently has 10 active citizens in the registry, 4 ongoing/completed infrastructure projects, and 5 logged grievances. Please try asking about 'water complaints', 'delayed projects', or 'senior pension eligibility'.`;
         } else {
           aiResponseText = `मी तुमच्या "${textToSend}" या प्रश्नाशी जुळणारे तपशील मिळवू शकलो नाही. 
-          \nगावाचा संक्षिप्त गोषवारा: खेड शिवापूर पंचायतीमध्ये सध्या १० नागरिक, ४ विकास प्रकल्प आणि ५ नोंदणीकृत तक्रारी आहेत. कृपया 'पाण्याची गळती', 'विलंब झालेले प्रकल्प', किंवा 'पेन्शन योजना पात्रता' याविषयी विचारा.`;
+          \nगावाचा संक्षिप्त गोषवारा: लोणी काळभोर पंचायतीमध्ये सध्या १० नागरिक, ४ विकास प्रकल्प आणि ५ नोंदणीकृत तक्रारी आहेत. कृपया 'पाण्याची गळती', 'विलंब झालेले प्रकल्प', किंवा 'पेन्शन योजना पात्रता' याविषयी विचारा.`;
         }
 
         aiSources = [
