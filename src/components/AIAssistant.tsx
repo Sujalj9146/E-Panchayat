@@ -62,24 +62,28 @@ const handleSend = async (textToSend: string) => {
 
     // Call Gemini API if Key is set
     if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
-      const gResult = await callGeminiAPI(textToSend, GEMINI_API_KEY, isEnglish, true);
-      if (gResult) {
-        setMessages(prev => [...prev, {
-          sender: 'ai',
-          text: gResult,
-          sources: [{ type: 'Gemini 2.5 Flash', title: 'Generative AI Response' }],
-          graphData: {
-            nodes: [
-              { id: 'q', label: 'User Inquiry', labelMr: 'युझर प्रश्न', type: 'query' },
-              { id: 'g', label: 'Gemini Cloud', labelMr: 'जेमिनी क्लाउड', type: 'entity' }
-            ],
-            links: [
-              { source: 'q', target: 'g', label: 'Dispatches query', labelMr: 'प्रश्न पाठवला' }
-            ]
-          }
-        }]);
-        setLoading(false);
-        return;
+      try {
+        const gResult = await callGeminiAPI(textToSend, GEMINI_API_KEY, isEnglish, true);
+        if (gResult) {
+          setMessages(prev => [...prev, {
+            sender: 'ai',
+            text: gResult,
+            sources: [{ type: 'Gemini 2.5 Flash', title: 'Generative AI Response' }],
+            graphData: {
+              nodes: [
+                { id: 'q', label: 'User Inquiry', labelMr: 'युझर प्रश्न', type: 'query' },
+                { id: 'g', label: 'Gemini Cloud', labelMr: 'जेमिनी क्लाउड', type: 'entity' }
+              ],
+              links: [
+                { source: 'q', target: 'g', label: 'Dispatches query', labelMr: 'प्रश्न पाठवला' }
+              ]
+            }
+          }]);
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Gemini Cloud call failed, self-healing back to offline GraphRAG engine:", err);
       }
     }
 
