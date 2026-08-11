@@ -1018,24 +1018,6 @@ Please formulate a highly helpful, brief, and professional response in the reque
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs sm:text-sm">
             {chatLog.map((chat, idx) => {
               const isEnglish = i18n.language === 'en';
-              
-              // Node position calculations for Graph RAG SVG
-              const nodes = chat.graphData?.nodes || [];
-              const links = chat.graphData?.links || [];
-              const otherNodes = nodes.filter(n => n.type !== 'query');
-              const queryNode = nodes.find(n => n.type === 'query');
-              
-              const coords: { [key: string]: { x: number; y: number } } = {};
-              if (queryNode) {
-                coords[queryNode.id] = { x: 150, y: 100 };
-              }
-              otherNodes.forEach((node, nIdx) => {
-                const angle = (nIdx * 2 * Math.PI) / Math.max(1, otherNodes.length);
-                coords[node.id] = {
-                  x: 150 + 80 * Math.cos(angle),
-                  y: 100 + 65 * Math.sin(angle)
-                };
-              });
 
               return (
                 <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -1062,109 +1044,7 @@ Please formulate a highly helpful, brief, and professional response in the reque
                       </div>
                     )}
 
-                    {/* GraphRAG Visual Subnetwork */}
-                    {nodes.length > 0 && (
-                      <div className="mt-3.5 pt-3 border-t border-slate-200/60">
-                        <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
-                          <Sparkles size={10} className="text-govsaffron animate-pulse" />
-                          <span>{isEnglish ? 'Local Knowledge Graph Path (GraphRAG)' : 'स्थानिक माहिती आलेख पथ (GraphRAG)'}</span>
-                        </span>
-                        
-                        <svg viewBox="0 0 300 200" className="w-full max-w-[320px] mx-auto border border-slate-200 bg-slate-900 rounded-lg p-2 mt-2 select-none shadow-inner">
-                          <defs>
-                            <marker id="arrow-portal" viewBox="0 0 10 10" refX="16" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-                              <path d="M 0 2 L 10 5 L 0 8 z" fill="#a78bfa" />
-                            </marker>
-                          </defs>
 
-                          {/* Render links */}
-                          {links.map((link, lIdx) => {
-                            const from = coords[link.source] || { x: 150, y: 100 };
-                            const to = coords[link.target] || { x: 150, y: 100 };
-                            return (
-                              <g key={lIdx}>
-                                <line
-                                  x1={from.x}
-                                  y1={from.y}
-                                  x2={to.x}
-                                  y2={to.y}
-                                  stroke="#a78bfa"
-                                  strokeWidth="1.2"
-                                  strokeDasharray="3 2"
-                                  markerEnd="url(#arrow-portal)"
-                                  className="opacity-80"
-                                />
-                                <text
-                                  x={(from.x + to.x) / 2}
-                                  y={(from.y + to.y) / 2 - 3}
-                                  fill="#f59e0b"
-                                  fontSize="6"
-                                  fontWeight="bold"
-                                  textAnchor="middle"
-                                >
-                                  {isEnglish ? link.label : link.labelMr}
-                                </text>
-                              </g>
-                            );
-                          })}
-
-                          {/* Render nodes */}
-                          {nodes.map((node) => {
-                            const pt = coords[node.id] || { x: 150, y: 100 };
-                            const isQuery = node.type === 'query';
-                            const isEntity = node.type === 'entity';
-                            const isSource = node.type === 'source';
-
-                            let fill = "#1e293b";
-                            let stroke = "#475569";
-                            let textFill = "#f8fafc";
-                            if (isQuery) {
-                              fill = "#4f46e5";
-                              stroke = "#818cf8";
-                            } else if (isEntity) {
-                              fill = "#065f46";
-                              stroke = "#34d399";
-                            } else if (isSource) {
-                              fill = "#701a75";
-                              stroke = "#f472b6";
-                            }
-
-                            return (
-                              <g key={node.id}>
-                                <circle
-                                  cx={pt.x}
-                                  cy={pt.y}
-                                  r={isQuery ? 13 : 11}
-                                  fill={fill}
-                                  stroke={stroke}
-                                  strokeWidth="1.5"
-                                />
-                                <text
-                                  x={pt.x}
-                                  y={pt.y + 2}
-                                  textAnchor="middle"
-                                  fontSize="6"
-                                  fontWeight="black"
-                                  fill={textFill}
-                                >
-                                  {isQuery ? "QUERY" : (isEnglish ? node.type.toUpperCase().substring(0,4) : (node.type === 'entity' ? 'घटक' : 'स्रोत'))}
-                                </text>
-                                <text
-                                  x={pt.x}
-                                  y={pt.y + (isQuery ? 20 : 17)}
-                                  textAnchor="middle"
-                                  fontSize="6.5"
-                                  fontWeight="bold"
-                                  fill="#f1f5f9"
-                                >
-                                  {isEnglish ? node.label : node.labelMr}
-                                </text>
-                              </g>
-                            );
-                          })}
-                        </svg>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
