@@ -42,6 +42,9 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   citizenId
 }) => {
   const { i18n } = useTranslation();
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('panchayat_gemini_api_key') || '');
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyTemp, setKeyTemp] = useState('');
 
   const activeCitizen = useMemo(() => {
     const matched = CITIZENS.find(c => c.id === citizenId);
@@ -338,6 +341,23 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
       { source: 'd', target: 's', label: 'Assigned Cell', labelMr: 'नियुक्त विभाग' }
     ];
 
+  } else if (query.includes('suggest') || query.includes('do') || query.includes('plan') || query.includes('improve') || query.includes('सुधारणा') || query.includes('नियोजन')) {
+    aiText = isEnglish
+      ? "**AI Citizen Suggestions for Loni Kalbhor:**\n\n1. **Submit Locker Files**: Upload your Aadhaar, Income, and 7/12 land papers to let the Gram Sevak approve them for welfare schemes.\n2. **Public Sabhas**: Attend the August 20 Gram Sabha at ZP School Ground to vote on monsoon drain clearances.\n3. **Track Grievances**: File a complaint if you observe pipeline leakages near Maruti Temple."
+      : "**लोणी काळभोर नागरिकांसाठी AI शिफारसी:**\n\n१. **दस्तऐवज सबमिट करा**: तुमचे आधार, उत्पन्न आणि ७/१२ उतारा येथे लॉकरमध्ये अपलोड करा जेणेकरून ग्रामसेवक त्याला मान्यता देतील.\n२. **ग्रामसभा**: २० ऑगस्ट रोजी जि. प. शाळा मैदानावर होणाऱ्या बैठकीला उपस्थित रहा.\n३. **तक्रार नोंदणी**: मारुती मंदिराजवळ पाणी गळती आढळल्यास तक्रार दाखल करा.";
+    
+    aiSources = [
+      { type: 'Gram Panchayat Rules', title: 'Citizen Active Participation Guidelines' }
+    ];
+    graphNodes = [
+      { id: 'q', label: 'AI Assistance', labelMr: 'AI मदत', type: 'query' },
+      { id: 'l', label: 'Locker Papers', labelMr: 'लॉकर दस्तऐवज', type: 'entity' },
+      { id: 's', label: 'Gram Sabha Event', labelMr: 'ग्रामसभा बैठक', type: 'concept' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'l', label: 'Guides uploads', labelMr: 'अपलोड मार्गदर्शन' },
+      { source: 'q', target: 's', label: 'Schedules visit', labelMr: 'भेट नियोजन' }
+    ];
   } else {
     aiText = isEnglish
       ? "I ran a semantic scan over the Panchayat knowledge graph but could not find a direct match. Try asking about 'my locker files', 'next meeting date', 'senior citizen pensions', or 'water complaints'."
@@ -359,7 +379,36 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
   return { text: aiText, sources: aiSources, graphData: { nodes: graphNodes, links: graphLinks } };
 };
 
-  const handleChatSend = (e: React.FormEvent) => {
+  
+const callPortalGeminiAPI = async (prompt: string, key: string, isEnglish: boolean) => {
+  const context = `
+You are the official E-Panchayat GraphRAG AI Assistant for Loni Kalbhor (लोणी काळभोर) village, Pune, Maharashtra.
+Panchayat Status:
+- Citizens Registered: 10 (including Savita Patil, Amit Shinde, Anandrao Patil)
+- Infrastructure Projects: 4 (Concrete Road Construction in Ward 3 is Delayed at 65% progress, Budget 18 Lakhs; Digital Center Setup is Completed at 100% progress, Budget 3 Lakhs)
+- Unresolved Grievances: 5 (Water pipeline leakage near Maruti Temple, drainage clogging)
+- Next Sabha Meeting: August 20, 2026, at ZP School Ground.
+User query: "${prompt}"
+Language: ${isEnglish ? 'English' : 'Marathi'}.
+Please formulate a highly helpful, brief, and professional response in the requested language. Keep it under 4 sentences. Use markdown bold where appropriate.
+`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: context }] }]
+      })
+    });
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  } catch (err) {
+    return "";
+  }
+};
+
+  const handleChatSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
 
@@ -368,8 +417,31 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
     setChatInput('');
     setChatLoading(true);
 
+    const isEnglish = i18n.language === 'en';
+    
+    if (apiKey) {
+      const gResult = await callPortalGeminiAPI(userText, apiKey, isEnglish);
+      if (gResult) {
+        setChatLog(prev => [...prev, {
+          sender: 'ai',
+          text: gResult,
+          sources: [{ type: 'Gemini 2.5 Flash', title: 'Generative AI Response' }],
+          graphData: {
+            nodes: [
+              { id: 'q', label: 'User Inquiry', labelMr: 'युझर प्रश्न', type: 'query' },
+              { id: 'g', label: 'Gemini Cloud', labelMr: 'जेमिनी क्लाउड', type: 'entity' }
+            ],
+            links: [
+              { source: 'q', target: 'g', label: 'Dispatches query', labelMr: 'प्रश्न पाठवला' }
+            ]
+          }
+        }]);
+        setChatLoading(false);
+        return;
+      }
+    }
+
     setTimeout(() => {
-      const isEnglish = i18n.language === 'en';
       const outcome = getGraphRAGResponse(userText, isEnglish, activeCitizen.name, citizenDocs);
       setChatLog(prev => [...prev, { 
         sender: 'ai', 
@@ -936,11 +1008,67 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
                   {i18n.language === 'en' ? 'Village Citizen Helpdesk AI' : 'ग्राम नागरिक मदत कक्ष AI'}
                 </strong>
                 <span className="text-[9px] text-slate-400 font-semibold block">
-                  {i18n.language === 'en' ? 'Ask about Certificates, Land records, or Subsidies' : 'दाखले, जमीन अभिलेख किंवा शासकीय योजनांविषयी विचारा'}
+                  {apiKey 
+                    ? (i18n.language === 'en' ? 'Gemini 2.5 Cloud Enabled' : 'जेमिनी क्लाउड सक्रिय') 
+                    : (i18n.language === 'en' ? 'GraphRAG Offline Mode' : 'ऑफलाईन शोध सक्रिय')}
                 </span>
               </div>
             </div>
+
+            {/* Config Key Button */}
+            <button
+              onClick={() => {
+                setShowKeyInput(!showKeyInput);
+                setKeyTemp(apiKey);
+              }}
+              className={`p-1.5 rounded border text-[10px] font-bold flex items-center gap-1 transition-all ${
+                apiKey 
+                  ? 'bg-purple-50 border-purple-200 text-purple-600' 
+                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700'
+              }`}
+              title="Configure Gemini Cloud API Key"
+            >
+              <Key size={12} />
+              <span>{apiKey ? 'API Active' : 'Key'}</span>
+            </button>
           </div>
+
+          {/* API Key Configuration Dropdown */}
+          {showKeyInput && (
+            <div className="p-3 border-b border-slate-150 bg-slate-50 flex items-center gap-2 text-xs">
+              <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Gemini Key:</span>
+              <input
+                type="password"
+                value={keyTemp}
+                onChange={(e) => setKeyTemp(e.target.value)}
+                placeholder="AIzaSy..."
+                className="flex-1 px-2.5 py-1 rounded bg-white border border-slate-200 text-xs focus:outline-none"
+              />
+              <button
+                onClick={() => {
+                  localStorage.setItem('panchayat_gemini_api_key', keyTemp);
+                  setApiKey(keyTemp);
+                  setShowKeyInput(false);
+                }}
+                className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded"
+              >
+                Save
+              </button>
+              {apiKey && (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('panchayat_gemini_api_key');
+                    setApiKey('');
+                    setKeyTemp('');
+                    setShowKeyInput(false);
+                  }}
+                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold rounded"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Logs */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs sm:text-sm">

@@ -23,6 +23,9 @@ interface Message {
 
 export const AIAssistant: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('panchayat_gemini_api_key') || '');
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [keyTemp, setKeyTemp] = useState('');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -41,7 +44,36 @@ export const AIAssistant: React.FC = () => {
     { text: t('ai_assistant.preset_q4'), value: 'budget' }
   ];
 
-  const handleSend = (textToSend: string) => {
+  
+const callGeminiAPI = async (prompt: string, key: string, isEnglish: boolean) => {
+  const context = `
+You are the official E-Panchayat GraphRAG AI Assistant for Loni Kalbhor (लोणी काळभोर) village, Pune, Maharashtra.
+Panchayat Status:
+- Citizens Registered: 10 (including Savita Patil, Amit Shinde, Anandrao Patil)
+- Infrastructure Projects: 4 (Concrete Road Construction in Ward 3 is Delayed at 65% progress, Budget 18 Lakhs; Digital Center Setup is Completed at 100% progress, Budget 3 Lakhs)
+- Unresolved Grievances: 5 (Water pipeline leakage near Maruti Temple, drainage clogging)
+- Next Sabha Meeting: August 20, 2026, at ZP School Ground.
+User query: "${prompt}"
+Language: ${isEnglish ? 'English' : 'Marathi'}.
+Please formulate a highly helpful, brief, and professional response in the requested language. Keep it under 4 sentences. Use markdown bold where appropriate.
+`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: context }] }]
+      })
+    });
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  } catch (err) {
+    return "";
+  }
+};
+
+  const handleSend = async (textToSend: string) => {
     if (!textToSend.trim()) return;
 
     // Add user message
@@ -190,11 +222,69 @@ export const AIAssistant: React.FC = () => {
             <h2 className="text-sm font-bold text-white m-0 tracking-wide">{t('ai_assistant.title')}</h2>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">GraphRAG Engine Connected</span>
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                {apiKey ? 'Gemini 2.5 Cloud Enabled' : 'GraphRAG Offline Mode'}
+              </span>
             </div>
           </div>
         </div>
+
+        {/* API Key Configure Button */}
+        <button
+          onClick={() => {
+            setShowKeyInput(!showKeyInput);
+            setKeyTemp(apiKey);
+          }}
+          className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all ${
+            apiKey 
+              ? 'bg-purple-950/40 border-purple-500/40 text-purple-300' 
+              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+          }`}
+          title="Configure Gemini Cloud API Key"
+        >
+          <Key size={14} />
+          <span className="hidden sm:inline">{apiKey ? 'Gemini Active' : 'Configure Key'}</span>
+        </button>
       </div>
+
+      {/* API Key Configuration Dropdown */}
+      {showKeyInput && (
+        <div className="p-3 border-b border-slate-800 bg-slate-950/80 flex flex-col sm:flex-row items-center gap-2">
+          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider sm:w-28">Gemini Key:</span>
+          <input
+            type="password"
+            value={keyTemp}
+            onChange={(e) => setKeyTemp(e.target.value)}
+            placeholder="AIzaSy..."
+            className="flex-1 px-3 py-1.5 rounded bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none"
+          />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => {
+                localStorage.setItem('panchayat_gemini_api_key', keyTemp);
+                setApiKey(keyTemp);
+                setShowKeyInput(false);
+              }}
+              className="flex-1 sm:flex-none px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded"
+            >
+              Save
+            </button>
+            {apiKey && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('panchayat_gemini_api_key');
+                  setApiKey('');
+                  setKeyTemp('');
+                  setShowKeyInput(false);
+                }}
+                className="flex-1 sm:flex-none px-3 py-1.5 bg-rose-900 hover:bg-rose-800 text-rose-200 text-xs font-bold rounded border border-rose-800"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Preset Questions Selector */}
       {messages.length === 1 && (
