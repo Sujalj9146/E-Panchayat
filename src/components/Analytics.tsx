@@ -95,98 +95,154 @@ export const Analytics: React.FC = () => {
         <p className="text-xs text-slate-500 mt-1">Granular demographic graphs, scheme coverages, grievance categories, and infrastructure finance analytics.</p>
       </div>
 
+      {/* Logic & Analytics Rules Explainer Card */}
+      <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Users size={16} className="text-govsaffron" />
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+            {i18n.language === 'en' ? '📊 AI Governance Analytics Engine - Rules & Calculations Logic' : '📊 शासकीय विश्लेषण इंजिन - नियम आणि गणना तर्कशास्त्र'}
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 space-y-1">
+            <strong className="text-slate-300 block">1. Demographics Formula</strong>
+            <p className="text-slate-500 leading-relaxed">
+              Groups the entire citizen register dynamically: <strong>Youth</strong> (&lt;30 yrs), <strong>Adults</strong> (30-59 yrs), and <strong>Seniors</strong> (60+ yrs) to track senior scheme potentials.
+            </p>
+          </div>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 space-y-1">
+            <strong className="text-slate-300 block">2. Scheme Potentials Check</strong>
+            <p className="text-slate-500 leading-relaxed">
+              Calculates eligibility by scanning the database: age restrictions (e.g. 60+ for pension), gender (Female for Beti Bachao), and max income thresholds.
+            </p>
+          </div>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 space-y-1">
+            <strong className="text-slate-300 block">3. Financial Utilization</strong>
+            <p className="text-slate-500 leading-relaxed">
+              Monitors capital projects by summing <code>p.budget</code> vs. <code>p.utilized</code> (rendered in Lakhs ₹) to identify over-expenditures and balance.
+            </p>
+          </div>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 space-y-1">
+            <strong className="text-slate-300 block">4. Grievance Departmental Routing</strong>
+            <p className="text-slate-500 leading-relaxed">
+              Aggregates all filed citizen grievance issues by category, routing load metrics to designated sanitation or water works cells.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Main Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Project Financials */}
-        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2">
-            <DollarSign size={16} className="text-emerald-400" />
-            <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Project Budget vs Expenditure (₹ Lakhs)</h2>
+        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <DollarSign size={16} className="text-emerald-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Project Budget vs Expenditure (₹ Lakhs)</h2>
+            </div>
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={projectsBudgetDetails} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                  <Legend wrapperStyle={{ fontSize: 10 }} />
+                  <Bar name="Total Budget" dataKey="budget" fill="#4f46e5" radius={[3, 3, 0, 0]} />
+                  <Bar name="Utilized Fund" dataKey="utilized" fill="#10b981" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={projectsBudgetDetails} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar name="Total Budget" dataKey="budget" fill="#4f46e5" radius={[3, 3, 0, 0]} />
-                <Bar name="Utilized Fund" dataKey="utilized" fill="#10b981" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 text-[11px] text-slate-400 leading-normal">
+            <strong>Calculation Logic:</strong> Maps infrastructure works database (<code>PROJECTS</code>) directly. Formula: <code>budget / 100,000</code> and <code>utilized / 100,000</code> to convert raw Rupees to standard Lakh units. Helps audits monitor fund conservation.
           </div>
         </div>
 
         {/* Scheme Potential Beneficiaries */}
-        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2">
-            <Award size={16} className="text-purple-400" />
-            <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Potential Scheme Eligibility Counts</h2>
+        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Award size={16} className="text-purple-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Potential Scheme Eligibility Counts</h2>
+            </div>
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={schemeEnrollmentPotentials} layout="vertical" margin={{ top: 10, right: 10, left: 15, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis type="number" stroke="#64748b" fontSize={10} />
+                  <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={80} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                  <Bar name="Potential Beneficiaries" dataKey="potentials" fill="#8b5cf6" radius={[0, 3, 3, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={schemeEnrollmentPotentials} layout="vertical" margin={{ top: 10, right: 10, left: 15, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis type="number" stroke="#64748b" fontSize={10} />
-                <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} width={80} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Bar name="Potential Beneficiaries" dataKey="potentials" fill="#8b5cf6" radius={[0, 3, 3, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 text-[11px] text-slate-400 leading-normal">
+            <strong>Calculation Logic:</strong> Evaluates potential candidates by running demographic constraints filters on <code>CITIZENS</code> registry (e.g. Senior Pension: <code>age &gt;= 60 && income &lt;= 100,000</code>). Highlights enrollment capacity.
           </div>
         </div>
 
         {/* Demographics Pie */}
-        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2">
-            <Users size={16} className="text-indigo-400" />
-            <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Village Age Demographics (Sample size)</h2>
-          </div>
-          <div className="h-64 flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={ageDemographics}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {ageDemographics.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute text-center">
-              <span className="text-2xl font-extrabold text-white">{CITIZENS.length}</span>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wider">Sample DB</p>
+        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-indigo-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Village Age Demographics (Sample size)</h2>
             </div>
+            <div className="h-60 flex items-center justify-center relative">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={ageDemographics}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={70}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {ageDemographics.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute text-center">
+                <span className="text-2xl font-extrabold text-white">{CITIZENS.length}</span>
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider">Sample DB</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 text-[11px] text-slate-400 leading-normal">
+            <strong>Calculation Logic:</strong> Splits the local citizens registry (<code>CITIZENS</code>) by age groups. Groups: <strong>Youth</strong> (&lt;30), <strong>Adults</strong> (30-59), and <strong>Seniors</strong> (60+). Useful for age-sensitive social schemes.
           </div>
         </div>
 
         {/* Grievance categories Area chart */}
-        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle size={16} className="text-rose-400" />
-            <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Grievances Category Load breakdown</h2>
+        <div className="glass-card rounded-xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-rose-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide uppercase text-slate-400">Grievances Category Load breakdown</h2>
+            </div>
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={grievancesByCategory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                  <YAxis stroke="#64748b" fontSize={10} />
+                  <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                  <Bar name="Grievance Count" dataKey="value" fill="#ec4899" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={grievancesByCategory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
-                <YAxis stroke="#64748b" fontSize={10} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Bar name="Grievance Count" dataKey="value" fill="#ec4899" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="p-3 bg-slate-950/40 rounded border border-slate-800 text-[11px] text-slate-400 leading-normal">
+            <strong>Calculation Logic:</strong> Scans the grievance repository (<code>GRIEVANCES</code>) and counts instances dynamically grouped by their classification categories (e.g. Sanitation, Water Works, Infrastructure, Health).
           </div>
         </div>
 
