@@ -19,6 +19,17 @@ import {
 import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS, CITIZENS } from '../data/mockData';
 import type { Grievance } from '../data/mockData';
 
+
+interface ChatMessage {
+  sender: 'user' | 'ai';
+  text: string;
+  sources?: { type: string; title: string }[];
+  graphData?: {
+    nodes: { id: string; label: string; labelMr: string; type: string }[];
+    links: { source: string; target: string; label: string; labelMr: string }[];
+  };
+}
+
 interface CitizenPortalProps {
   currentTab: string;
   setCurrentTab: (tab: string) => void;
@@ -63,7 +74,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
   // Chatbot State
   const [chatInput, setChatInput] = useState('');
-  const [chatLog, setChatLog] = useState([
+  const [chatLog, setChatLog] = useState<ChatMessage[]>([
     {
       sender: 'ai',
       text: i18n.language === 'en' 
@@ -227,6 +238,127 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
   };
 
   // AI chat responder for citizen
+  
+const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitizenName: string, activeDocsList: any[]) => {
+  const query = queryText.toLowerCase();
+  let aiText = "";
+  let aiSources: { type: string; title: string }[] = [];
+  let graphNodes: { id: string; label: string; labelMr: string; type: string }[] = [];
+  let graphLinks: { source: string; target: string; label: string; labelMr: string }[] = [];
+
+  if (query.includes('locker') || query.includes('document') || query.includes('certificate') || query.includes('दाखला') || query.includes('लॉकर') || query.includes('प्रमाणपत्र') || query.includes('७/१२') || query.includes('7/12') || query.includes('aadhaar') || query.includes('आधार') || query.includes('income') || query.includes('उत्पन्न')) {
+    // Locker / Certificates status scan
+    const matchedDocs = activeDocsList.filter(d => d.citizenName.toLowerCase() === activeCitizenName.toLowerCase());
+    
+    if (matchedDocs.length > 0) {
+      const docSummaries = matchedDocs.map(d => `${isEnglish ? d.docType : d.docTypeMr} ('${d.fileName}': ${isEnglish ? d.status : d.statusMr})`).join(", ");
+      aiText = isEnglish 
+        ? `GraphRAG scan complete. I retrieved ${matchedDocs.length} files stored under your profile: ${docSummaries}. You can upload new certificates in the locker tab on the left for immediate officer audit.`
+        : `GraphRAG स्कॅन पूर्ण. मला आपल्या नावाखाली जतन केलेल्या ${matchedDocs.length} फाईल्स मिळाल्या: ${docSummaries}. आपण डाव्या बाजूला लॉकर टॅबमध्ये नवीन दस्तऐवज अपलोड करू शकता.`;
+      
+      aiSources = matchedDocs.map(d => ({ type: 'Digital Locker', title: d.fileName }));
+    } else {
+      aiText = isEnglish
+        ? "I scanned your digital locker vault but did not find any active documents uploaded yet. Please use the file selector on the locker screen to submit your Aadhaar, Income Certificate, or Land 7/12 Extract for officer verification."
+        : "मला आपल्या लॉकर खात्यामध्ये कोणतेही दस्तऐवज आढळले नाहीत. कृपया आपले आधार कार्ड, उत्पन्नाचा दाखला किंवा ७/१२ उतारा अपलोड करा जेणेकरून अधिकारी त्याची पडताळणी करतील.";
+      
+      aiSources = [{ type: 'Database Vault', title: 'Empty Locker' }];
+    }
+
+    graphNodes = [
+      { id: 'q', label: 'Locker Inquiry', labelMr: 'लॉकर चौकशी', type: 'query' },
+      { id: 'c', label: activeCitizenName, labelMr: activeCitizenName, type: 'entity' },
+      { id: 'l', label: 'Secure Locker', labelMr: 'सुरक्षित लॉकर', type: 'concept' },
+      { id: 'd', label: matchedDocs.length > 0 ? matchedDocs[0].fileName : 'No File Found', labelMr: matchedDocs.length > 0 ? matchedDocs[0].fileName : 'फाईल आढळली नाही', type: 'source' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'c', label: 'Queries session user', labelMr: 'सत्र नागरिक शोध' },
+      { source: 'c', target: 'l', label: 'Accesses folder', labelMr: 'लॉकर ऍक्सेस' },
+      { source: 'l', target: 'd', label: 'Stores file', labelMr: 'दस्तऐवज जतन' }
+    ];
+
+  } else if (query.includes('pension') || query.includes('senior') || query.includes('पेन्शन') || query.includes('वृद्ध') || query.includes('ज्येष्ठ') || query.includes('योजना') || query.includes('scheme')) {
+    // Senior citizen scheme / generic scheme search
+    aiText = isEnglish
+      ? "For the Senior Citizen Pension Scheme, candidates must be 60+ years old with annual household income below ₹1,00,000. Verified Aadhaar and Income certificates are mandatory. For online eligible schemes (like Agricultural Pump Subsidy), click the link provided in the Welfare Schemes feed."
+      : "ज्येष्ठ नागरिक पेन्शन योजनेसाठी वय ६०+ आणि वार्षिक उत्पन्न ₹१,००,००० पेक्षा कमी असणे आवश्यक आहे. या योजनेसाठी आधार आणि उत्पन्नाचा दाखला देणे बंधनकारक आहे.";
+    
+    aiSources = [
+      { type: 'Scheme Rules', title: 'Senior Citizen Pension Guidelines' },
+      { type: 'Central Welfare', title: 'Solar Pump Scheme Specs' }
+    ];
+
+    graphNodes = [
+      { id: 'q', label: 'Scheme Eligibility', labelMr: 'योजना पात्रता', type: 'query' },
+      { id: 's', label: 'Senior Pension', labelMr: 'ज्येष्ठ नागरिक पेन्शन', type: 'entity' },
+      { id: 'r', label: 'Income < 1 Lakh', labelMr: 'उत्पन्न < १ लाख', type: 'concept' },
+      { id: 'l', label: 'Aadhaar Locker Node', labelMr: 'आधार लॉकर घटक', type: 'source' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 's', label: 'Filters welfare', labelMr: 'योजना फिल्टर' },
+      { source: 's', target: 'r', label: 'Applies restriction', labelMr: 'मर्यादा लागू' },
+      { source: 'r', target: 'l', label: 'Verified by', labelMr: 'द्वारे पडताळणी' }
+    ];
+
+  } else if (query.includes('meeting') || query.includes('sabha') || query.includes('सभा') || query.includes('बैठक')) {
+    aiText = isEnglish
+      ? "The next Gram Sabha session is scheduled for August 20, 2026, at 11:00 AM in the ZP School Ground. Key agenda items include rain drain preparedness, drinking water pipeline repairs, and caste proof camp setups."
+      : "पुढील ग्रामसभा बैठक २० ऑगस्ट २०२६ रोजी सकाळी ११:०० वाजता जि. प. शाळा मैदानावर आयोजित केली आहे. बैठकीमध्ये गटार नियोजन, पिण्याच्या पाण्याची गळती दुरुस्त करणे यावर चर्चा होईल.";
+    
+    aiSources = [{ type: 'Sabha Schedule', title: 'Sabha Notification Circular 2026-08' }];
+
+    graphNodes = [
+      { id: 'q', label: 'Meeting Date', labelMr: 'बैठक वेळ', type: 'query' },
+      { id: 'b', label: 'Gram Sabha Body', labelMr: 'ग्रामसभा समिती', type: 'entity' },
+      { id: 'e', label: 'ZP School Ground', labelMr: 'शाळा मैदान', type: 'concept' },
+      { id: 'd', label: 'Circular 2026-08', labelMr: 'घोषणापत्रक २०२६-०८', type: 'source' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'b', label: 'Inquires scheduling', labelMr: 'नियोजन शोध' },
+      { source: 'b', target: 'd', label: 'Publishes circular', labelMr: 'परिपत्रक प्रसिद्ध' },
+      { source: 'd', target: 'e', label: 'Specifies venue', labelMr: 'ठिकाण दर्शवते' }
+    ];
+
+  } else if (query.includes('grievance') || query.includes('complaint') || query.includes('water') || query.includes('drainage') || query.includes('leak') || query.includes('तक्रार') || query.includes('गळती') || query.includes('गटार')) {
+    aiText = isEnglish
+      ? "Sanitation and Water pipeline issues in Ward 3 near Maruti Temple are under investigation. Emergency drain cleanups are approved. If you have a local infrastructure issue, submit a new grievance in the Track Grievances tab."
+      : "वॉर्ड ३ मधील मारुती मंदिराजवळ पाणी पुरवठा आणि स्वच्छता कामाची तपासणी सुरू आहे. आपण तक्रार निवारण कक्षामध्ये जाऊन नवीन तक्रार दाखल करू शकता.";
+    
+    aiSources = [{ type: 'Grievance DB', title: 'Ward 3 Sanitation Issues' }];
+
+    graphNodes = [
+      { id: 'q', label: 'Grievance Search', labelMr: 'तक्रार शोध', type: 'query' },
+      { id: 'w', label: 'Ward 3 Location', labelMr: 'वॉर्ड ३ ठिकाण', type: 'entity' },
+      { id: 'd', label: 'Water Pipeline Clog', labelMr: 'पाईपलाईन बिघाड', type: 'concept' },
+      { id: 's', label: 'Sanitation Cell', labelMr: 'स्वच्छता विभाग', type: 'source' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'w', label: 'Filters by region', labelMr: 'क्षेत्रानुसार फिल्टर' },
+      { source: 'w', target: 'd', label: 'Contains leak', labelMr: 'गळतीचे ठिकाण' },
+      { source: 'd', target: 's', label: 'Assigned Cell', labelMr: 'नियुक्त विभाग' }
+    ];
+
+  } else {
+    aiText = isEnglish
+      ? "I ran a semantic scan over the Panchayat knowledge graph but could not find a direct match. Try asking about 'my locker files', 'next meeting date', 'senior citizen pensions', or 'water complaints'."
+      : "मी आपल्या प्रश्नाशी संबंधित विशिष्ट घटक शोधू शकलो नाही. कृपया 'माझे लॉकर दस्तऐवज', 'ग्रामसभा बैठक', 'ज्येष्ठ नागरिक योजना', किंवा 'पाण्याची तक्रार' याविषयी विचारून पहा.";
+    
+    aiSources = [{ type: 'Index DB', title: 'Knowledge Graph Registry' }];
+
+    graphNodes = [
+      { id: 'q', label: 'Panchayat AI', labelMr: 'पंचायत AI', type: 'query' },
+      { id: 'k', label: 'Knowledge Graph', labelMr: 'ज्ञान आलेख', type: 'entity' },
+      { id: 'v', label: 'Vector Store', labelMr: 'वेक्टर डेटाबेस', type: 'concept' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'k', label: 'Scans entities', labelMr: 'घटक स्कॅन' },
+      { source: 'k', target: 'v', label: 'References storage', labelMr: 'संदर्भ डेटाबेस' }
+    ];
+  }
+
+  return { text: aiText, sources: aiSources, graphData: { nodes: graphNodes, links: graphLinks } };
+};
+
   const handleChatSend = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -237,29 +369,14 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     setChatLoading(true);
 
     setTimeout(() => {
-      let aiText = "";
-      const query = userText.toLowerCase();
       const isEnglish = i18n.language === 'en';
-
-      if (query.includes('birth') || query.includes('death') || query.includes('certificate') || query.includes('प्रमाणपत्र')) {
-        aiText = isEnglish 
-          ? "To get Birth, Death, or Income Certificates, please visit the Gram Panchayat Digital Center (Ward 2) with your Aadhaar Card and Ration Card. You can also apply online via the MahaOnline portal."
-          : "जन्म, मृत्यू किंवा उत्पन्नाचा दाखला मिळवण्यासाठी कृपया तुमचे आधार कार्ड आणि रेशन कार्ड घेऊन ग्रामपंचायत डिजिटल सेवा केंद्रात (वॉर्ड २) संपर्क साधा. आपण महाऑनलाईन पोर्टलद्वारे ऑनलाईन अर्जही करू शकता.";
-      } else if (query.includes('pension') || query.includes('senior') || query.includes('पेन्शन') || query.includes('योजना')) {
-        aiText = isEnglish
-          ? "For the Senior Citizen Pension Scheme, citizens must be 60+ years of age with annual family income below ₹1,00,000. You will need Age proof, Income certificate, and Residence proof."
-          : "ज्येष्ठ नागरिक पेन्शन योजनेसाठी वय ६० वर्षांपेक्षा जास्त आणि वार्षिक कौटुंबिक उत्पन्न ₹१,००,००० पेक्षा कमी असणे आवश्यक आहे. यासाठी वयाचा पुरावा, उत्पन्नाचा दाखला आणि रहिवासी दाखला लागेल.";
-      } else if (query.includes('meeting') || query.includes('sabha') || query.includes('सभा') || query.includes('बैठक')) {
-        aiText = isEnglish
-          ? "The next Gram Sabha session is scheduled for August 20, 2026, at 11:00 AM in the Khed Shivapur Community Hall. All citizens are requested to attend and raise local queries."
-          : "पुढील ग्रामसभा बैठक २० ऑगस्ट २०२६ रोजी सकाळी ११:०० वाजता खेड शिवापूर कम्युनिटी हॉलमध्ये आयोजित केली आहे. सर्व नागरिकांना उपस्थित राहून आपल्या समस्या मांडण्याची विनंती आहे.";
-      } else {
-        aiText = isEnglish
-          ? "Thank you for asking. For this service, please submit a written application to the Gram Sevak officer at the Panchayat building on weekdays between 10:00 AM and 5:00 PM."
-          : "विचारल्याबद्दल धन्यवाद. या सेवेसाठी, कृपया कार्यालयीन दिवशी सकाळी १० ते संध्याकाळी ५ दरम्यान ग्रामपंचायत कार्यालयात ग्रामसेवकांकडे लेखी अर्ज सादर करावा.";
-      }
-
-      setChatLog(prev => [...prev, { sender: 'ai', text: aiText }]);
+      const outcome = getGraphRAGResponse(userText, isEnglish, activeCitizen.name, citizenDocs);
+      setChatLog(prev => [...prev, { 
+        sender: 'ai', 
+        text: outcome.text,
+        sources: outcome.sources,
+        graphData: outcome.graphData
+      }]);
       setChatLoading(false);
     }, 1000);
   };
@@ -827,17 +944,159 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
           {/* Logs */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs sm:text-sm">
-            {chatLog.map((chat, idx) => (
-              <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] rounded-lg p-3 ${
-                  chat.sender === 'user'
-                    ? 'bg-govnavy text-white rounded-tr-none'
-                    : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none'
-                }`}>
-                  <p className="leading-relaxed font-sans">{chat.text}</p>
+            {chatLog.map((chat, idx) => {
+              const isEnglish = i18n.language === 'en';
+              
+              // Node position calculations for Graph RAG SVG
+              const nodes = chat.graphData?.nodes || [];
+              const links = chat.graphData?.links || [];
+              const otherNodes = nodes.filter(n => n.type !== 'query');
+              const queryNode = nodes.find(n => n.type === 'query');
+              
+              const coords: { [key: string]: { x: number; y: number } } = {};
+              if (queryNode) {
+                coords[queryNode.id] = { x: 150, y: 100 };
+              }
+              otherNodes.forEach((node, nIdx) => {
+                const angle = (nIdx * 2 * Math.PI) / Math.max(1, otherNodes.length);
+                coords[node.id] = {
+                  x: 150 + 80 * Math.cos(angle),
+                  y: 100 + 65 * Math.sin(angle)
+                };
+              });
+
+              return (
+                <div key={idx} className={`flex ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[85%] rounded-xl p-4 ${
+                    chat.sender === 'user'
+                      ? 'bg-govnavy text-white rounded-tr-none shadow-sm'
+                      : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
+                  }`}>
+                    <p className="leading-relaxed font-sans whitespace-pre-line text-xs sm:text-sm m-0">{chat.text}</p>
+
+                    {/* Sources Badges */}
+                    {chat.sources && chat.sources.length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-slate-200/60">
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                          {isEnglish ? 'Sources Retrieved:' : 'प्राप्त संदर्भ स्रोत:'}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {chat.sources.map((src, sIdx) => (
+                            <span key={sIdx} className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[9px] text-slate-500 font-semibold block">
+                              {src.type}: {src.title}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* GraphRAG Visual Subnetwork */}
+                    {nodes.length > 0 && (
+                      <div className="mt-3.5 pt-3 border-t border-slate-200/60">
+                        <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block flex items-center gap-1">
+                          <Sparkles size={10} className="text-govsaffron animate-pulse" />
+                          <span>{isEnglish ? 'Local Knowledge Graph Path (GraphRAG)' : 'स्थानिक माहिती आलेख पथ (GraphRAG)'}</span>
+                        </span>
+                        
+                        <svg viewBox="0 0 300 200" className="w-full max-w-[320px] mx-auto border border-slate-200 bg-slate-900 rounded-lg p-2 mt-2 select-none shadow-inner">
+                          <defs>
+                            <marker id="arrow-portal" viewBox="0 0 10 10" refX="16" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                              <path d="M 0 2 L 10 5 L 0 8 z" fill="#a78bfa" />
+                            </marker>
+                          </defs>
+
+                          {/* Render links */}
+                          {links.map((link, lIdx) => {
+                            const from = coords[link.source] || { x: 150, y: 100 };
+                            const to = coords[link.target] || { x: 150, y: 100 };
+                            return (
+                              <g key={lIdx}>
+                                <line
+                                  x1={from.x}
+                                  y1={from.y}
+                                  x2={to.x}
+                                  y2={to.y}
+                                  stroke="#a78bfa"
+                                  strokeWidth="1.2"
+                                  strokeDasharray="3 2"
+                                  markerEnd="url(#arrow-portal)"
+                                  className="opacity-80"
+                                />
+                                <text
+                                  x={(from.x + to.x) / 2}
+                                  y={(from.y + to.y) / 2 - 3}
+                                  fill="#f59e0b"
+                                  fontSize="6"
+                                  fontWeight="bold"
+                                  textAnchor="middle"
+                                >
+                                  {isEnglish ? link.label : link.labelMr}
+                                </text>
+                              </g>
+                            );
+                          })}
+
+                          {/* Render nodes */}
+                          {nodes.map((node) => {
+                            const pt = coords[node.id] || { x: 150, y: 100 };
+                            const isQuery = node.type === 'query';
+                            const isEntity = node.type === 'entity';
+                            const isSource = node.type === 'source';
+
+                            let fill = "#1e293b";
+                            let stroke = "#475569";
+                            let textFill = "#f8fafc";
+                            if (isQuery) {
+                              fill = "#4f46e5";
+                              stroke = "#818cf8";
+                            } else if (isEntity) {
+                              fill = "#065f46";
+                              stroke = "#34d399";
+                            } else if (isSource) {
+                              fill = "#701a75";
+                              stroke = "#f472b6";
+                            }
+
+                            return (
+                              <g key={node.id}>
+                                <circle
+                                  cx={pt.x}
+                                  cy={pt.y}
+                                  r={isQuery ? 13 : 11}
+                                  fill={fill}
+                                  stroke={stroke}
+                                  strokeWidth="1.5"
+                                />
+                                <text
+                                  x={pt.x}
+                                  y={pt.y + 2}
+                                  textAnchor="middle"
+                                  fontSize="6"
+                                  fontWeight="black"
+                                  fill={textFill}
+                                >
+                                  {isQuery ? "QUERY" : (isEnglish ? node.type.toUpperCase().substring(0,4) : (node.type === 'entity' ? 'घटक' : 'स्रोत'))}
+                                </text>
+                                <text
+                                  x={pt.x}
+                                  y={pt.y + (isQuery ? 20 : 17)}
+                                  textAnchor="middle"
+                                  fontSize="6.5"
+                                  fontWeight="bold"
+                                  fill="#f1f5f9"
+                                >
+                                  {isEnglish ? node.label : node.labelMr}
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {chatLoading && (
               <div className="flex justify-start">
                 <div className="bg-slate-50 border border-slate-200 rounded-lg rounded-tl-none p-3 flex items-center gap-2">
