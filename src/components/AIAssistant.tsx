@@ -24,6 +24,35 @@ interface Message {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
+const renderFormattedText = (text: string) => {
+  return text.split('\n').map((line, lIdx) => {
+    const isBullet = line.trim().startsWith('-') || line.trim().startsWith('*');
+    const cleanLine = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line;
+
+    const parts = cleanLine.split('**');
+    const lineContent = parts.map((part, pIdx) => {
+      if (pIdx % 2 === 1) {
+        return <strong key={pIdx} className="font-extrabold text-govblue-900">{part}</strong>;
+      }
+      return part;
+    });
+
+    if (isBullet) {
+      return (
+        <li key={lIdx} className="ml-4 list-disc my-1 text-slate-700">
+          {lineContent}
+        </li>
+      );
+    }
+
+    return (
+      <p key={lIdx} className="my-1 text-slate-700 min-h-[1em]">
+        {lineContent}
+      </p>
+    );
+  });
+};
+
 export const AIAssistant: React.FC = () => {
   const { t, i18n } = useTranslation();
 
@@ -302,7 +331,7 @@ const handleSend = async (textToSend: string) => {
             }`}>
               {/* Message text with formatting */}
               <div className="text-xs sm:text-sm leading-relaxed whitespace-pre-line font-sans">
-                {msg.text}
+                <div className="space-y-1">{renderFormattedText(msg.text)}</div>
               </div>
 
               {/* Message Sources */}

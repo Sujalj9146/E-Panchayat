@@ -40,6 +40,35 @@ interface CitizenPortalProps {
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
+const renderFormattedText = (text: string) => {
+  return text.split('\n').map((line, lIdx) => {
+    const isBullet = line.trim().startsWith('-') || line.trim().startsWith('*');
+    const cleanLine = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line;
+
+    const parts = cleanLine.split('**');
+    const lineContent = parts.map((part, pIdx) => {
+      if (pIdx % 2 === 1) {
+        return <strong key={pIdx} className="font-extrabold text-govblue-900">{part}</strong>;
+      }
+      return part;
+    });
+
+    if (isBullet) {
+      return (
+        <li key={lIdx} className="ml-4 list-disc my-1 text-slate-700">
+          {lineContent}
+        </li>
+      );
+    }
+
+    return (
+      <p key={lIdx} className="my-1 text-slate-700 min-h-[1em]">
+        {lineContent}
+      </p>
+    );
+  });
+};
+
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ 
   currentTab, 
   setCurrentTab,
@@ -1008,7 +1037,7 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
                       ? 'bg-govnavy text-white rounded-tr-none shadow-sm'
                       : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
                   }`}>
-                    <p className="leading-relaxed font-sans whitespace-pre-line text-xs sm:text-sm m-0">{chat.text}</p>
+                    <div className="leading-relaxed font-sans text-xs sm:text-sm m-0 space-y-1">{renderFormattedText(chat.text)}</div>
 
                     {/* Sources Badges */}
                     {chat.sources && chat.sources.length > 0 && (
