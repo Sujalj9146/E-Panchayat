@@ -30,7 +30,7 @@ app.post('/api/gemini', async (req, res) => {
 Panchayat Core Metrics:
 - Active Citizens: 10
 - Logged Grievances: 5 (1 Critical in Ward 3, 2 High)
-- Capital Infrastructure Projects: 4 (Concrete Road construction is Delayed at 65% progress, Budget 18 Lakhs; Digital Center Setup is Completed at 100% progress, Budget 3 Lakhs)
+- Capital Infrastructure Projects: 4 (Concrete Road construction in Ward 3 is Delayed at 68% progress, Budget 10 Lakhs; Digital Center Setup in Ward 2 is Completed at 100% progress, Budget 3.5 Lakhs; Water Tank & Pipeline in Ward 1 is Ongoing at 45% progress, Budget 15 Lakhs; Primary School Boundary Wall & Smart Classroom in Ward 3/4 is Ongoing at 90% progress, Budget 6 Lakhs)
 - Next Sabha Meeting: August 20, 2026, at ZP School Ground.
 User query: "${prompt}"
 Language: ${isEnglish ? 'English' : 'Marathi'}.
@@ -38,7 +38,7 @@ Please formulate a highly helpful, concise, and professional answer for the Panc
     : `You are the official E-Panchayat GraphRAG AI Assistant for Loni Kalbhor (लोणी काळभोर) village, Pune, Maharashtra.
 Panchayat Status:
 - Citizens Registered: 10 (including Savita Patil, Amit Shinde, Anandrao Patil)
-- Infrastructure Projects: 4 (Concrete Road Construction in Ward 3 is Delayed at 65% progress, Budget 18 Lakhs; Digital Center Setup is Completed at 100% progress, Budget 3 Lakhs)
+- Infrastructure Projects: 4 (Concrete Road construction in Ward 3 is Delayed at 68% progress, Budget 10 Lakhs; Digital Center Setup in Ward 2 is Completed at 100% progress, Budget 3.5 Lakhs; Water Tank & Pipeline in Ward 1 is Ongoing at 45% progress, Budget 15 Lakhs; Primary School Boundary Wall & Smart Classroom in Ward 3/4 is Ongoing at 90% progress, Budget 6 Lakhs)
 - Unresolved Grievances: 5 (Water pipeline leakage near Maruti Temple, drainage clogging)
 - Next Sabha Meeting: August 20, 2026, at ZP School Ground.
 User query: "${prompt}"

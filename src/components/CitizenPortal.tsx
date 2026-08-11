@@ -18,7 +18,8 @@ import {
   ExternalLink,
   FileText
 } from 'lucide-react';
-import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS, CITIZENS } from '../data/mockData';
+import { SCHEMES, GRIEVANCES, MAP_CENTER, CITIZEN_DOCUMENTS, CITIZENS, PROJECTS } from '../data/mockData';
+import type { Project } from '../data/mockData';
 import type { Grievance } from '../data/mockData';
 
 
@@ -334,6 +335,67 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
       { source: 'q', target: 's', label: 'Filters welfare', labelMr: 'योजना फिल्टर' },
       { source: 's', target: 'r', label: 'Applies restriction', labelMr: 'मर्यादा लागू' },
       { source: 'r', target: 'l', label: 'Verified by', labelMr: 'द्वारे पडताळणी' }
+    ];
+
+  } else if (query.includes('delay') || query.includes('project') || query.includes('प्रकल्प') || query.includes('काम') || query.includes('ongoing') || query.includes('completed')) {
+    const ongoing = PROJECTS.filter((p: Project) => p.status === 'Ongoing');
+    const delayed = PROJECTS.filter((p: Project) => p.status === 'Delayed');
+    const completed = PROJECTS.filter((p: Project) => p.status === 'Completed');
+
+    if (query.includes('ongoing') || query.includes('सुरू')) {
+      if (isEnglish) {
+        aiText = `**Ongoing Infrastructure Projects in Loni Kalbhor:**\n\n` + ongoing.map((p: Project) => 
+          `- **${p.name}** (Ward ${p.ward})\n  - Progress: **${p.progress}%**\n  - Budget: ₹${(p.budget/100000).toFixed(1)} Lakh (₹${(p.utilized/100000).toFixed(1)} Lakh utilized)`
+        ).join('\n');
+      } else {
+        aiText = `**लोणी काळभोर मधील सुरू असलेले विकास प्रकल्प:**\n\n` + ongoing.map((p: Project) => 
+          `- **${p.nameMr}** (वॉर्ड ${p.ward})\n  - प्रगती: **${p.progress}%**\n  - बजेट: ₹${(p.budget/100000).toFixed(1)} लाख (₹${(p.utilized/100000).toFixed(1)} लाख खर्च)`
+        ).join('\n');
+      }
+      aiSources = ongoing.map((p: Project) => ({ type: 'Project Tracker', title: isEnglish ? p.name : p.nameMr }));
+    } else if (query.includes('completed') || query.includes('पूर्ण')) {
+      if (isEnglish) {
+        aiText = `**Completed Infrastructure Projects in Loni Kalbhor:**\n\n` + completed.map((p: Project) => 
+          `- **${p.name}** (Ward ${p.ward})\n  - Progress: **${p.progress}%** (Completed)\n  - Final Budget: ₹${(p.budget/100000).toFixed(1)} Lakh`
+        ).join('\n');
+      } else {
+        aiText = `**लोणी काळभोर मधील पूर्ण झालेले विकास प्रकल्प:**\n\n` + completed.map((p: Project) => 
+          `- **${p.nameMr}** (वॉर्ड ${p.ward})\n  - प्रगती: **${p.progress}%** (पूर्ण झाले)\n  - एकूण खर्च: ₹${(p.budget/100000).toFixed(1)} लाख`
+        ).join('\n');
+      }
+      aiSources = completed.map((p: Project) => ({ type: 'Project Tracker', title: isEnglish ? p.name : p.nameMr }));
+    } else if (query.includes('delay') || query.includes('विलंब')) {
+      if (isEnglish) {
+        aiText = `**Delayed Infrastructure Projects in Loni Kalbhor:**\n\n` + delayed.map((p: Project) => 
+          `- **${p.name}** (Ward ${p.ward})\n  - Progress: **${p.progress}%**\n  - Budget: ₹${(p.budget/100000).toFixed(1)} Lakh\n  - Reason: Supply chain issues for aggregate cement tiles reported in June Gram Sabha notes.`
+        ).join('\n');
+      } else {
+        aiText = `**लोणी काळभोर मधील विलंबित विकास प्रकल्प:**\n\n` + delayed.map((p: Project) => 
+          `- **${p.nameMr}** (वॉर्ड ${p.ward})\n  - प्रगती: **${p.progress}%**\n  - बजेट: ₹${(p.budget/100000).toFixed(1)} लाख\n  - विलंब कारण: सिमेंट ब्लॉक्सच्या पुरवठ्यात अडथळा आल्याचे जूनच्या ग्रामसभा अहवालात नमूद आहे.`
+        ).join('\n');
+      }
+      aiSources = delayed.map((p: Project) => ({ type: 'Project Tracker', title: isEnglish ? p.name : p.nameMr }));
+    } else {
+      if (isEnglish) {
+        aiText = `**Loni Kalbhor GP Infrastructure Project Status Summary:**\n\n` +
+          `- **Ongoing (${ongoing.length}):** ${ongoing.map((p: Project) => p.name).join(', ')}\n` +
+          `- **Delayed (${delayed.length}):** ${delayed.map((p: Project) => p.name).join(', ')}\n` +
+          `- **Completed (${completed.length}):** ${completed.map((p: Project) => p.name).join(', ')}`;
+      } else {
+        aiText = `**लोणी काळभोर ग्रामपंचायत विकास प्रकल्प सारांश:**\n\n` +
+          `- **सुरू असलेले (${ongoing.length}):** ${ongoing.map((p: Project) => p.nameMr).join(', ')}\n` +
+          `- **विलंब झालेले (${delayed.length}):** ${delayed.map((p: Project) => p.nameMr).join(', ')}\n` +
+          `- **पूर्ण झालेले (${completed.length}):** ${completed.map((p: Project) => p.nameMr).join(', ')}`;
+      }
+      aiSources = PROJECTS.map((p: Project) => ({ type: 'Project Tracker', title: isEnglish ? p.name : p.nameMr }));
+    }
+
+    graphNodes = [
+      { id: 'q', label: 'Project Info', labelMr: 'प्रकल्प माहिती', type: 'query' },
+      { id: 'p', label: 'Civil Works', labelMr: 'बांधकाम कामे', type: 'entity' }
+    ];
+    graphLinks = [
+      { source: 'q', target: 'p', label: 'Queries progress', labelMr: 'प्रगती चौकशी' }
     ];
 
   } else if (query.includes('meeting') || query.includes('sabha') || query.includes('सभा') || query.includes('बैठक')) {
