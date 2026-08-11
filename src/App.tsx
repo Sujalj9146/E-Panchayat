@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -30,9 +31,24 @@ import { Login } from './components/Login';
 
 // Import i18n initialization
 import './i18n/i18n';
+import { syncCloudDataToLocal, addPersistenceListener } from './lib/persistence';
+import { CITIZENS, GRIEVANCES, PROJECTS, CITIZEN_DOCUMENTS, MOCK_SABHA_MEETING } from './data/mockData';
 
 function App() {
   const { i18n } = useTranslation();
+  const [syncTrigger, setSyncTrigger] = useState(0);
+
+  // Trigger Supabase Cloud Sync on mount
+  useEffect(() => {
+    syncCloudDataToLocal(CITIZENS, GRIEVANCES, PROJECTS, CITIZEN_DOCUMENTS, MOCK_SABHA_MEETING);
+
+    // Force reactive re-render once background sync finishes loading cloud data
+    const unsubscribe = addPersistenceListener(() => {
+      setSyncTrigger(prev => prev + 1);
+    });
+
+    return unsubscribe;
+  }, []);
   const [viewMode, setViewMode] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -50,6 +66,7 @@ function App() {
       return <CitizenPortal currentTab={currentTab} setCurrentTab={setCurrentTab} citizenId={loginUser} />;
     }
 
+    // Reactive trigger key to rebuild state on cloud load
     switch (currentTab) {
       case 'dashboard':
         return (
@@ -79,7 +96,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen text-slate-800 bg-[#f4f6f9] font-sans selection:bg-govsaffron selection:text-white">
+    <div key={syncTrigger} className="min-h-screen text-slate-800 bg-[#f4f6f9] font-sans selection:bg-govsaffron selection:text-white">
       {/* 1. LANDING PAGE VIEW */}
       {viewMode === 'landing' && (
         <div className="relative overflow-hidden bg-slate-50 min-h-screen flex flex-col justify-between">
