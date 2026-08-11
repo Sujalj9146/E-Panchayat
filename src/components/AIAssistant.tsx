@@ -32,21 +32,21 @@ const renderFormattedText = (text: string) => {
     const parts = cleanLine.split('**');
     const lineContent = parts.map((part, pIdx) => {
       if (pIdx % 2 === 1) {
-        return <strong key={pIdx} className="font-extrabold text-govblue-900">{part}</strong>;
+        return <strong key={pIdx} className="font-extrabold text-inherit">{part}</strong>;
       }
       return part;
     });
 
     if (isBullet) {
       return (
-        <li key={lIdx} className="ml-4 list-disc my-1 text-slate-700">
+        <li key={lIdx} className="ml-4 list-disc my-1 text-inherit">
           {lineContent}
         </li>
       );
     }
 
     return (
-      <p key={lIdx} className="my-1 text-slate-700 min-h-[1em]">
+      <p key={lIdx} className="my-1 text-inherit min-h-[1em]">
         {lineContent}
       </p>
     );
