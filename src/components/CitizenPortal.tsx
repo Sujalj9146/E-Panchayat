@@ -36,15 +36,15 @@ interface CitizenPortalProps {
   citizenId: string;
 }
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+
 export const CitizenPortal: React.FC<CitizenPortalProps> = ({ 
   currentTab, 
   setCurrentTab,
   citizenId
 }) => {
   const { i18n } = useTranslation();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('panchayat_gemini_api_key') || '');
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [keyTemp, setKeyTemp] = useState('');
+
 
   const activeCitizen = useMemo(() => {
     const matched = CITIZENS.find(c => c.id === citizenId);
@@ -419,8 +419,8 @@ Please formulate a highly helpful, brief, and professional response in the reque
 
     const isEnglish = i18n.language === 'en';
     
-    if (apiKey) {
-      const gResult = await callPortalGeminiAPI(userText, apiKey, isEnglish);
+    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
+      const gResult = await callPortalGeminiAPI(userText, GEMINI_API_KEY, isEnglish);
       if (gResult) {
         setChatLog(prev => [...prev, {
           sender: 'ai',
@@ -1008,67 +1008,11 @@ Please formulate a highly helpful, brief, and professional response in the reque
                   {i18n.language === 'en' ? 'Village Citizen Helpdesk AI' : 'ग्राम नागरिक मदत कक्ष AI'}
                 </strong>
                 <span className="text-[9px] text-slate-400 font-semibold block">
-                  {apiKey 
-                    ? (i18n.language === 'en' ? 'Gemini 2.5 Cloud Enabled' : 'जेमिनी क्लाउड सक्रिय') 
-                    : (i18n.language === 'en' ? 'GraphRAG Offline Mode' : 'ऑफलाईन शोध सक्रिय')}
+                  {i18n.language === 'en' ? 'Ask about Certificates, Land records, or Subsidies' : 'दाखले, जमीन अभिलेख किंवा शासकीय योजनांविषयी विचारा'}
                 </span>
               </div>
             </div>
-
-            {/* Config Key Button */}
-            <button
-              onClick={() => {
-                setShowKeyInput(!showKeyInput);
-                setKeyTemp(apiKey);
-              }}
-              className={`p-1.5 rounded border text-[10px] font-bold flex items-center gap-1 transition-all ${
-                apiKey 
-                  ? 'bg-purple-50 border-purple-200 text-purple-600' 
-                  : 'bg-white border-slate-200 text-slate-400 hover:text-slate-700'
-              }`}
-              title="Configure Gemini Cloud API Key"
-            >
-              <Key size={12} />
-              <span>{apiKey ? 'API Active' : 'Key'}</span>
-            </button>
           </div>
-
-          {/* API Key Configuration Dropdown */}
-          {showKeyInput && (
-            <div className="p-3 border-b border-slate-150 bg-slate-50 flex items-center gap-2 text-xs">
-              <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Gemini Key:</span>
-              <input
-                type="password"
-                value={keyTemp}
-                onChange={(e) => setKeyTemp(e.target.value)}
-                placeholder="AIzaSy..."
-                className="flex-1 px-2.5 py-1 rounded bg-white border border-slate-200 text-xs focus:outline-none"
-              />
-              <button
-                onClick={() => {
-                  localStorage.setItem('panchayat_gemini_api_key', keyTemp);
-                  setApiKey(keyTemp);
-                  setShowKeyInput(false);
-                }}
-                className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold rounded"
-              >
-                Save
-              </button>
-              {apiKey && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('panchayat_gemini_api_key');
-                    setApiKey('');
-                    setKeyTemp('');
-                    setShowKeyInput(false);
-                  }}
-                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold rounded"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Logs */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs sm:text-sm">

@@ -21,11 +21,11 @@ interface Message {
   };
 }
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+
 export const AIAssistant: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('panchayat_gemini_api_key') || '');
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [keyTemp, setKeyTemp] = useState('');
+
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -73,7 +73,7 @@ Please formulate a highly helpful, brief, and professional response in the reque
   }
 };
 
-  const handleSend = async (textToSend: string) => {
+const handleSend = async (textToSend: string) => {
     if (!textToSend.trim()) return;
 
     // Add user message
@@ -82,127 +82,189 @@ Please formulate a highly helpful, brief, and professional response in the reque
     setInput('');
     setLoading(true);
 
-    // Simulate GraphRAG search response after short timeout
+    const query = textToSend.toLowerCase();
+    const isEnglish = i18n.language === 'en';
+
+    // Call Gemini API if Key is set
+    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
+      const gResult = await callGeminiAPI(textToSend, GEMINI_API_KEY, isEnglish);
+      if (gResult) {
+        setMessages(prev => [...prev, {
+          sender: 'ai',
+          text: gResult,
+          sources: [{ type: 'Gemini 2.5 Flash', title: 'Generative AI Response' }],
+          graphData: {
+            nodes: [
+              { id: 'q', label: 'User Inquiry', labelMr: 'युझर प्रश्न', type: 'query' },
+              { id: 'g', label: 'Gemini Cloud', labelMr: 'जेमिनी क्लाउड', type: 'entity' }
+            ],
+            links: [
+              { source: 'q', target: 'g', label: 'Dispatches query', labelMr: 'प्रश्न पाठवला' }
+            ]
+          }
+        }]);
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Fallback to offline GraphRAG search response after short timeout
     setTimeout(() => {
       let aiResponseText = "";
       let aiSources: { type: string; title: string }[] = [];
-
-      const query = textToSend.toLowerCase();
-      const isEnglish = i18n.language === 'en';
+      let graphNodes: { id: string; label: string; labelMr: string; type: string }[] = [];
+      let graphLinks: { source: string; target: string; label: string; labelMr: string }[] = [];
 
       if (query.includes('grievance') || query.includes('तक्रार') || query.includes('ward') || query.includes('वॉर्ड')) {
-        // Grievances search
         const active = GRIEVANCES.filter(g => g.status !== 'Resolved');
         const ward3 = GRIEVANCES.filter(g => g.ward === 3);
         
         if (isEnglish) {
-          aiResponseText = `Based on the latest database indexing, there are currently ${active.length} pending/in-progress grievances in the village. 
-          \n**Ward 3 has the highest load with ${ward3.length} unresolved cases** (specifically: "${GRIEVANCES[0].title}" and "${GRIEVANCES[2].title}"). 
-          \n**AI Departmental Routing:** The Sanitation cell and Water Works department are primary bottlenecks due to Market Square drainage clogging.`;
+          aiResponseText = `Based on the latest database indexing, there are currently ${active.length} pending/in-progress grievances in the village. \n\n**Ward 3 has the highest load with ${ward3.length} unresolved cases** (specifically: "${GRIEVANCES[0].title}" and "${GRIEVANCES[2].title}"). \n\n**AI Departmental Routing:** The Sanitation cell and Water Works department are primary bottlenecks due to Market Square drainage clogging.`;
         } else {
-          aiResponseText = `ताज्या अहवालानुसार, गावात सध्या एकूण ${active.length} तक्रारी प्रलंबित किंवा प्रगतीपथावर आहेत.
-          \n**वॉर्ड ३ मध्ये सर्वाधिक लोड असून तेथे ${ward3.length} प्रलंबित प्रकरणे आहेत** (उदा: "${GRIEVANCES[0].titleMr}" आणि "${GRIEVANCES[2].titleMr}").
-          \n**AI शिफारस:** स्वच्छता कक्ष आणि पाणी पुरवठा विभागाला या तक्रारी वर्ग करण्यात आल्या आहेत.`;
+          aiResponseText = `ताज्या अहवालानुसार, गावात सध्या एकूण ${active.length} तक्रारी प्रलंबित किंवा प्रगतीपथावर आहेत.\n\n**वॉर्ड ३ मध्ये सर्वाधिक लोड असून तेथे ${ward3.length} प्रलंबित प्रकरणे आहेत** (उदा: "${GRIEVANCES[0].titleMr}" आणि "${GRIEVANCES[2].titleMr}").\n\n**AI शिफारस:** स्वच्छता कक्ष आणि पाणी पुरवठा विभागाला या तक्रारी वर्ग करण्यात आल्या आहेत.`;
         }
-
-        aiSources = GRIEVANCES.map(g => ({ type: 'Grievance Record', title: isEnglish ? g.title : g.titleMr }));
+        aiSources = GRIEVANCES.slice(0, 3).map(g => ({ type: 'Grievance Record', title: isEnglish ? g.title : g.titleMr }));
+        
+        graphNodes = [
+          { id: 'q', label: 'Grievances Scan', labelMr: 'तक्रार स्कॅन', type: 'query' },
+          { id: 'w', label: 'Ward 3 Location', labelMr: 'वॉर्ड ३ ठिकाण', type: 'entity' },
+          { id: 'i', label: 'Drainage Clogging', labelMr: 'गटार पाणी तुंबणे', type: 'concept' },
+          { id: 'd', label: 'Sanitation Dept', labelMr: 'स्वच्छता विभाग', type: 'source' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 'w', label: 'Scans Ward', labelMr: 'वॉर्ड शोध' },
+          { source: 'w', target: 'i', label: 'Contains issue', labelMr: 'समस्या समाविष्ट' },
+          { source: 'i', target: 'd', label: 'Routed cell', labelMr: 'वर्ग केलेला कक्ष' }
+        ];
 
       } else if (query.includes('senior') || query.includes('pension') || query.includes('पेन्शन') || query.includes('वृद्ध') || query.includes('ज्येष्ठ')) {
-        // Senior citizen filter
         const eligible = CITIZENS.filter(c => c.age >= 60 && c.income <= 100000);
         
         if (isEnglish) {
-          aiResponseText = `According to the demographics dataset, we found ${eligible.length} citizens eligible for the Senior Citizen Pension scheme who are not yet fully enrolled. 
-          \nSpecifically in **Ward 3**, citizen **Savita Patil** (61 yrs, household income: ₹0) is recommended. 
-          \nIn **Ward 4**, we recommend **Ramesh Shinde** (72 yrs, income: ₹38,000) and **Lata Shinde** (65 yrs, income: ₹12,000). All documents are verified under family tree ID fam_shinde.`;
+          aiResponseText = `According to the demographics dataset, we found ${eligible.length} citizens eligible for the Senior Citizen Pension scheme who are not yet fully enrolled. \n\nSpecifically in **Ward 3**, citizen **Savita Patil** (61 yrs, household income: ₹0) is recommended. \n\nIn **Ward 4**, we recommend **Ramesh Shinde** (72 yrs, income: ₹38,000) and **Lata Shinde** (65 yrs, income: ₹12,000). All documents are verified under family tree ID fam_shinde.`;
         } else {
-          aiResponseText = `नागरिक डेटा विश्लेषणानुसार, आपल्याला ज्येष्ठ नागरिक पेन्शन योजनेसाठी ${eligible.length} पात्र नागरिक मिळाले आहेत ज्यांची अद्याप नोंदणी झालेली नाही.
-          \nविशेषतः **वॉर्ड ३** मधील रहिवासी **सविता पाटील** (वय ६१, उत्पन्न: ₹०) यांना शिफारस करण्यात येत आहे.
-          \n**वॉर्ड ४** मधील **रमेश शिंदे** (वय ७२, उत्पन्न: ₹३८,०००) आणि **लता शिंदे** (वय ६५, उत्पन्न: ₹१२,०००) पात्र आहेत.`;
+          aiResponseText = `नागरिक डेटा विश्लेषणानुसार, आपल्याला ज्येष्ठ नागरिक पेन्शन योजनेसाठी ${eligible.length} नागरिक पात्र मिळाले आहेत ज्यांची अद्याप नोंदणी झालेली नाही.\n\nविशेषतः **वॉर्ड ३** मधील रहिवासी **सविता पाटील** (वय ६१, उत्पन्न: ₹०) यांना शिफारस करण्यात येत आहे.\n\n**वॉर्ड ४** मधील **रमेश शिंदे** (वय ७२, उत्पन्न: ₹३८,०००) आणि **लता शिंदे** (वय ६५, उत्पन्न: ₹१२,०००) पात्र आहेत.`;
         }
-
         aiSources = eligible.map(c => ({ type: 'Citizen Profile', title: isEnglish ? c.name : c.nameMr }));
 
+        graphNodes = [
+          { id: 'q', label: 'Pension Inquiry', labelMr: 'पेन्शन योजना', type: 'query' },
+          { id: 's', label: 'Sr Citizen Pension', labelMr: 'ज्येष्ठ नागरिक पेन्शन', type: 'entity' },
+          { id: 'u', label: 'Savita Patil', labelMr: 'सविता पाटील', type: 'concept' },
+          { id: 'd', label: 'Verified Income', labelMr: 'पडताळणी उत्पन्न', type: 'source' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 's', label: 'Requests scheme', labelMr: 'योजना विनंती' },
+          { source: 's', target: 'u', label: 'Matches applicant', labelMr: 'पात्र अर्जदार' },
+          { source: 'u', target: 'd', label: 'References proof', labelMr: 'प्रमाणपत्र संदर्भ' }
+        ];
+
       } else if (query.includes('delay') || query.includes('project') || query.includes('प्रकल्प') || query.includes('काम')) {
-        // Delayed projects
         const delayed = PROJECTS.filter(p => p.status === 'Delayed');
         
         if (isEnglish) {
-          aiResponseText = `Analyzing Panchayat infrastructure trackers: 
-          \n**${delayed.length} project is classified as Delayed:** 
-          \n- **${PROJECTS[0].name}** (Ward 3)
-            - Progress: ${PROJECTS[0].progress}%
-            - Budget: ₹${(PROJECTS[0].budget/100000).toFixed(1)} Lakh (₹${(PROJECTS[0].utilized/100000).toFixed(1)} Lakh utilized)
-            - Reason: Supply chain issues for aggregate cement tiles reported in June Gram Sabha notes.`;
+          aiResponseText = `Analyzing Panchayat infrastructure trackers: \n\n**${delayed.length} project is classified as Delayed:** \n\n- **${PROJECTS[0].name}** (Ward 3)\n  - Progress: ${PROJECTS[0].progress}%\n  - Budget: ₹${(PROJECTS[0].budget/100000).toFixed(1)} Lakh (₹${(PROJECTS[0].utilized/100000).toFixed(1)} Lakh utilized)\n  - Reason: Supply chain issues for aggregate cement tiles reported in June Gram Sabha notes.`;
         } else {
-          aiResponseText = `प्रकल्प देखरेख अहवालानुसार:
-          \n**${delayed.length} विकास प्रकल्प विलंबित वर्गात आहे:**
-          \n- **${PROJECTS[0].nameMr}** (वॉर्ड ३)
-            - प्रगती: ${PROJECTS[0].progress}%
-            - बजेट: ₹${(PROJECTS[0].budget/100000).toFixed(1)} लाख (₹${(PROJECTS[0].utilized/100000).toFixed(1)} लाख खर्च)
-            - विलंब कारण: सिमेंट ब्लॉक्सच्या पुरवठ्यात अडथळा आल्याचे जूनच्या ग्रामसभा अहवालात नमूद आहे.`;
+          aiResponseText = `प्रकल्प देखरेख अहवालानुसार:\n\n**${delayed.length} विकास प्रकल्प विलंबित वर्गात आहे:**\n\n- **${PROJECTS[0].nameMr}** (वॉर्ड ३)\n  - प्रगती: ${PROJECTS[0].progress}%\n  - बजेट: ₹${(PROJECTS[0].budget/100000).toFixed(1)} लाख (₹${(PROJECTS[0].utilized/100000).toFixed(1)} लाख खर्च)\n  - विलंब कारण: सिमेंट ब्लॉक्सच्या पुरवठ्यात अडथळा आल्याचे जूनच्या ग्रामसभा अहवालात नमूद आहे.`;
         }
-
         aiSources = PROJECTS.map(p => ({ type: 'Project Tracker', title: isEnglish ? p.name : p.nameMr }));
 
+        graphNodes = [
+          { id: 'q', label: 'Project Delay', labelMr: 'विलंबित कामे', type: 'query' },
+          { id: 'p', label: 'Concrete Road', labelMr: 'सिमेंट रस्ता रस्ता', type: 'entity' },
+          { id: 's', label: 'June Sabha Minutes', labelMr: 'जून सभा वृत्तांत', type: 'concept' },
+          { id: 'b', label: 'Material Supply Clog', labelMr: 'साहित्य तुटवडा', type: 'source' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 'p', label: 'Scans progress', labelMr: 'प्रगती तपासणी' },
+          { source: 'p', target: 's', label: 'Linked in notes', labelMr: 'नोंदीमध्ये उल्लेख' },
+          { source: 's', target: 'b', label: 'Specifies bottleneck', labelMr: 'विलंब कारण स्पष्ट' }
+        ];
+
       } else if (query.includes('budget') || query.includes('पैसा') || query.includes('निधी') || query.includes('finance')) {
-        // Budget query
         const totalBudget = PROJECTS.reduce((sum, p) => sum + p.budget, 0);
         const totalUtilized = PROJECTS.reduce((sum, p) => sum + p.utilized, 0);
         const remaining = totalBudget - totalUtilized;
 
         if (isEnglish) {
-          aiResponseText = `**Unified Panchayat Development Budget Summary:**
-          \n- **Total Monitored Budget:** ₹${(totalBudget/100000).toFixed(2)} Lakh
-          \n- **Utilized Fund:** ₹${(totalUtilized/100000).toFixed(2)} Lakh
-          \n- **Unutilized Balance:** ₹${(remaining/100000).toFixed(2)} Lakh remaining.
-          \n**Alert:** The Digital Center Setup is 100% complete with ₹5,000 savings returned to general pool.`;
+          aiResponseText = `**Unified Panchayat Development Budget Summary:**\n\n- **Total Monitored Budget:** ₹${(totalBudget/100000).toFixed(2)} Lakh\n- **Utilized Fund:** ₹${(totalUtilized/100000).toFixed(2)} Lakh\n- **Unutilized Balance:** ₹${(remaining/100000).toFixed(2)} Lakh remaining. \n\n**Alert:** The Digital Center Setup is 100% complete with ₹5,000 savings returned to general pool.`;
         } else {
-          aiResponseText = `**एकूण पंचायत विकास निधी सारांश:**
-          \n- **एकूण प्रकल्प बजेट:** ₹${(totalBudget/100000).toFixed(2)} लाख
-          \n- **वापरलेला निधी:** ₹${(totalUtilized/100000).toFixed(2)} लाख
-          \n- **शिल्लक निधी:** ₹${(remaining/100000).toFixed(2)} लाख शिल्लक आहे.
-          \n**माहिती:** डिजिटल सेवा केंद्र प्रकल्प १००% पूर्ण झाला असून ₹५,००० ची बचत झाली आहे.`;
+          aiResponseText = `**एकूण पंचायत विकास निधी सारांश:**\n\n- **एकूण प्रकल्प बजेट:** ₹${(totalBudget/100000).toFixed(2)} लाख\n- **वापरलेला निधी:** ₹${(totalUtilized/100000).toFixed(2)} लाख\n- **शिल्लक निधी:** ₹${(remaining/100000).toFixed(2)} लाख गंवावल्याने शिल्लक आहे.`;
         }
-
         aiSources = PROJECTS.map(p => ({ type: 'Budget File', title: isEnglish ? p.name : p.nameMr }));
 
+        graphNodes = [
+          { id: 'q', label: 'Budget Query', labelMr: 'बजेट चौकशी', type: 'query' },
+          { id: 'b', label: 'Total Budget Node', labelMr: 'एकूण निधी आलेख', type: 'entity' },
+          { id: 'u', label: 'Infrastructure Allocation', labelMr: 'पायाभूत सुविधा वाटप', type: 'concept' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 'b', label: 'Checks balances', labelMr: 'निधी शिल्लक' },
+          { source: 'b', target: 'u', label: 'Allocated to projects', labelMr: 'प्रकल्पांना वितरित' }
+        ];
+
       } else if (query.includes('sabha') || query.includes('meeting') || query.includes('सभा') || query.includes('बैठक')) {
-        // Gram Sabha summary
         if (isEnglish) {
-          aiResponseText = `Summarizing Gram Sabha Meeting dated **${MOCK_SABHA_MEETING.date}**:
-          \n- **Major Agenda:** Monsoon drain preparedness, drinking water leakages, and school safety.
-          \n- **Key Decision:** Approved ₹10,000 for weekly market drain cleaning.
-          \n- **Action Items:** Junior engineer to submit road repairs estimate.`;
+          aiResponseText = `Summarizing Gram Sabha Meeting dated **${MOCK_SABHA_MEETING.date}**: \n\n- **Major Agenda:** Monsoon drain preparedness, drinking water leakages, and school safety. \n- **Key Decision:** Approved ₹10,000 for weekly market drain cleaning. \n- **Action Items:** Junior engineer to submit road repairs estimate.`;
         } else {
-          aiResponseText = `दिनांक **${MOCK_SABHA_MEETING.date}** रोजी झालेल्या ग्रामसभेचा आढावा:
-          \n- **मुख्य अजेंडा:** पावसाळी गटार नियोजन, पिण्याच्या पाण्याची गळती दुरुस्त करणे आणि शाळा सुरक्षा भिंत.
-          \n- **महत्त्वाचा निर्णय:** आठवडे बाजाराच्या स्वच्छतेसाठी ₹१०,००० चा आपत्कालीन निधी मंजूर.
-          \n- **कृती आराखडा:** कनिष्ठ अभियंत्यांनी रस्त्याच्या दुरुस्तीचे अंदाजपत्रक सादर करावे.`;
+          aiResponseText = `दिनांक **${MOCK_SABHA_MEETING.date}** रोजी झालेल्या ग्रामसभेचा आढावा: \n\n- **मुख्य अजेंडा:** पावसाळी गटार नियोजन, पिण्याच्या पाण्याची गळती दुरुस्त करणे आणि शाळा सुरक्षा भिंत. \n- **महत्त्वाचा निर्णय:** आठवडे बाजाराच्या स्वच्छतेसाठी ₹१०,००० चा आपत्कालीन निधी मंजूर. \n- **कृती आराखडा:** कनिष्ठ अभियंत्यांनी रस्त्याच्या दुरुस्तीचे अंदाजपत्रक सादर करावे.`;
         }
-
         aiSources = [{ type: 'Sabha Minutes', title: isEnglish ? MOCK_SABHA_MEETING.title : MOCK_SABHA_MEETING.titleMr }];
-
-      } else {
-        // Default response
+        
+        graphNodes = [
+          { id: 'q', label: 'Sabha Query', labelMr: 'ग्रामसभा माहिती', type: 'query' },
+          { id: 's', label: 'Meeting Date', labelMr: 'बैठक तारीख', type: 'entity' },
+          { id: 'm', label: 'Minutes Transcripts', labelMr: 'सभा नोंदणी', type: 'concept' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 's', label: 'Queries session', labelMr: 'सत्र बैठक शोध' },
+          { source: 's', target: 'm', label: 'Documented inside', labelMr: 'नोंदीमध्ये जतन' }
+        ];
+      } else if (query.includes('suggest') || query.includes('do') || query.includes('plan') || query.includes('improve') || query.includes('सुधारणा') || query.includes('नियोजन')) {
         if (isEnglish) {
-          aiResponseText = `I ran a GraphRAG query over the local knowledge graph but could not find a specific match for "${textToSend}". 
-          \nHere is a general summary: Loni Kalbhor currently has 10 active citizens in the registry, 4 ongoing/completed infrastructure projects, and 5 logged grievances. Please try asking about 'water complaints', 'delayed projects', or 'senior pension eligibility'.`;
+          aiResponseText = `**AI Improvement Suggestions for Loni Kalbhor:**\n\n1. **Grievance Resolution**: Deploy repair team to Ward 3 near Maruti Temple to resolve the water leak bottleneck.\n2. **Infrastructure**: Fast-track cement road aggregates supply chain to resume Delayed concrete projects.\n3. **Demographics**: Enroll Savita Patil (Ward 3) and Ramesh Shinde (Ward 4) in the Senior Pension scheme.\n4. **Upcoming Sabha**: Finalize monsoon drainage plans during the meeting on August 20.`;
         } else {
-          aiResponseText = `मी तुमच्या "${textToSend}" या प्रश्नाशी जुळणारे तपशील मिळवू शकलो नाही. 
-          \nगावाचा संक्षिप्त गोषवारा: लोणी काळभोर पंचायतीमध्ये सध्या १० नागरिक, ४ विकास प्रकल्प आणि ५ नोंदणीकृत तक्रारी आहेत. कृपया 'पाण्याची गळती', 'विलंब झालेले प्रकल्प', किंवा 'पेन्शन योजना पात्रता' याविषयी विचारा.`;
+          aiResponseText = `**लोणी काळभोर पंचायतीसाठी AI शिफारसी:**\n\n१. **तक्रार निवारण**: मारुती मंदिराजवळील पाणी गळती दुरुस्त करण्यासाठी वॉर्ड ३ मध्ये पथक पाठवा.\n२. **पायाभूत सुविधा**: विलंबित सिमेंट रस्ता प्रकल्प सुरू करण्यासाठी सिमेंट ब्लॉक्स पुरवठादारांशी संपर्क साधा.\n३. **Demographics**: सविता पाटील (वॉर्ड ३) आणि रमेश शिंदे (वॉर्ड ४) यांची पेन्शन नोंदणी पूर्ण करा.\n४. **ग्रामसभा**: २० ऑगस्ट रोजी होणाऱ्या ग्रामसभेत पावसाळी नाले सफाईचा ठराव मंजूर करा.`;
         }
-
+        aiSources = [
+          { type: 'Sabha Agenda', title: 'Monsoon Cleanliness Plan' },
+          { type: 'Project Tracker', title: 'Concrete Road Aggregates' }
+        ];
+        graphNodes = [
+          { id: 'q', label: 'Suggestions', labelMr: 'AI शिफारसी', type: 'query' },
+          { id: 'g', label: 'Grievance Core', labelMr: 'तक्रार विभाग', type: 'entity' },
+          { id: 'p', label: 'Pension Core', labelMr: 'पेन्शन योजना', type: 'concept' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 'g', label: 'Scans backlog', labelMr: 'प्रलंबित कामांचा शोध' },
+          { source: 'q', target: 'p', label: 'Evaluates eligibility', labelMr: 'पात्रता तपासणी' }
+        ];
+      } else {
+        if (isEnglish) {
+          aiResponseText = `I ran a GraphRAG query over the local knowledge graph but could not find a specific match for "${textToSend}". \n\nHere is a general summary: Loni Kalbhor currently has 10 active citizens in the registry, 4 ongoing/completed infrastructure projects, and 5 logged grievances. Please try asking about 'water complaints', 'delayed projects', or 'senior pension eligibility'.`;
+        } else {
+          aiResponseText = `मी तुमच्या "${textToSend}" या प्रश्नाशी जुळणारे तपशील मिळवू शकलो नाही. \n\nगावाचा संक्षिप्त गोषवारा: लोणी काळभोर पंचायतीमध्ये सध्या १० नागरिक, ४ विकास प्रकल्प आणि ५ नोंदणीकृत तक्रारी आहेत. कृपया 'पाण्याची गळती', 'विलंब झालेले प्रकल्प', किंवा 'पेन्शन योजना पात्रता' याविषयी विचारा.`;
+        }
         aiSources = [
           { type: 'Citizen DB', title: 'Citizen Registry' },
           { type: 'Project Feed', title: 'Infrastructure Database' }
+        ];
+
+        graphNodes = [
+          { id: 'q', label: 'General Search', labelMr: 'सामान्य शोध', type: 'query' },
+          { id: 'k', label: 'Knowledge Graph', labelMr: 'माहिती आलेख', type: 'entity' }
+        ];
+        graphLinks = [
+          { source: 'q', target: 'k', label: 'Scans nodes', labelMr: 'घटक स्कॅन' }
         ];
       }
 
       setMessages(prev => [...prev, {
         sender: 'ai',
         text: aiResponseText,
-        sources: aiSources
+        sources: aiSources,
+        graphData: { nodes: graphNodes, links: graphLinks }
       }]);
       setLoading(false);
     }, 1000);
@@ -222,69 +284,11 @@ Please formulate a highly helpful, brief, and professional response in the reque
             <h2 className="text-sm font-bold text-white m-0 tracking-wide">{t('ai_assistant.title')}</h2>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                {apiKey ? 'Gemini 2.5 Cloud Enabled' : 'GraphRAG Offline Mode'}
-              </span>
+              <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">GraphRAG Engine Connected</span>
             </div>
           </div>
         </div>
-
-        {/* API Key Configure Button */}
-        <button
-          onClick={() => {
-            setShowKeyInput(!showKeyInput);
-            setKeyTemp(apiKey);
-          }}
-          className={`p-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all ${
-            apiKey 
-              ? 'bg-purple-950/40 border-purple-500/40 text-purple-300' 
-              : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
-          }`}
-          title="Configure Gemini Cloud API Key"
-        >
-          <Key size={14} />
-          <span className="hidden sm:inline">{apiKey ? 'Gemini Active' : 'Configure Key'}</span>
-        </button>
       </div>
-
-      {/* API Key Configuration Dropdown */}
-      {showKeyInput && (
-        <div className="p-3 border-b border-slate-800 bg-slate-950/80 flex flex-col sm:flex-row items-center gap-2">
-          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider sm:w-28">Gemini Key:</span>
-          <input
-            type="password"
-            value={keyTemp}
-            onChange={(e) => setKeyTemp(e.target.value)}
-            placeholder="AIzaSy..."
-            className="flex-1 px-3 py-1.5 rounded bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none"
-          />
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => {
-                localStorage.setItem('panchayat_gemini_api_key', keyTemp);
-                setApiKey(keyTemp);
-                setShowKeyInput(false);
-              }}
-              className="flex-1 sm:flex-none px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded"
-            >
-              Save
-            </button>
-            {apiKey && (
-              <button
-                onClick={() => {
-                  localStorage.removeItem('panchayat_gemini_api_key');
-                  setApiKey('');
-                  setKeyTemp('');
-                  setShowKeyInput(false);
-                }}
-                className="flex-1 sm:flex-none px-3 py-1.5 bg-rose-900 hover:bg-rose-800 text-rose-200 text-xs font-bold rounded border border-rose-800"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Preset Questions Selector */}
       {messages.length === 1 && (
