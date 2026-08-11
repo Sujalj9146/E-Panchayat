@@ -85,6 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button 
             onClick={() => setCollapsed(!collapsed)}
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -139,12 +140,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           onClick={toggleLanguage}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors text-xs font-bold shadow-sm"
+          aria-label="Toggle Language / भाषा बदला"
         >
           <Globe size={16} className="text-govnavy" />
           {!collapsed && (
             <div className="flex items-center justify-between w-full">
-              <span>भाषा / Language</span>
-              <span className="bg-govnavy/10 text-govnavy px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase border border-govnavy/20">
+               <span>भाषा / Language</span>
+               <span className="bg-govnavy/10 text-govnavy px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase border border-govnavy/20">
                 {i18n.language === 'en' ? 'मराठी' : 'English'}
               </span>
             </div>
@@ -173,6 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={onLogout}
               className="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-transparent hover:border-rose-100 transition-all flex-shrink-0"
               title="Sign Out / लॉग आउट"
+              aria-label="Sign Out / लॉग आउट"
             >
               <LogOut size={16} />
             </button>

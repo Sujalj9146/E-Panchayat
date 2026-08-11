@@ -1,3 +1,4 @@
+import { getPersistentData } from '../lib/persistence';
 export interface Citizen {
   id: string;
   name: string;
@@ -88,7 +89,7 @@ export interface SabhaMeeting {
 // Map coordinates centered around Loni Kalbhor, Pune, Maharashtra (18.4907, 73.9806)
 export const MAP_CENTER: [number, number] = [18.4907, 73.9806];
 
-export const SCHEMES: Scheme[] = [
+const DEFAULT_SCHEMES: Scheme[] = [
   {
     id: 'scheme_sr_citizen',
     name: 'Senior Citizen Pension Scheme',
@@ -137,7 +138,7 @@ export const SCHEMES: Scheme[] = [
   }
 ];
 
-export const CITIZENS: Citizen[] = [
+const DEFAULT_CITIZENS: Citizen[] = [
   {
     id: 'cit_101',
     name: 'Anandrao Patil',
@@ -321,7 +322,7 @@ export const CITIZENS: Citizen[] = [
   }
 ];
 
-export const GRIEVANCES: Grievance[] = [
+const DEFAULT_GRIEVANCES: Grievance[] = [
   {
     id: 'grv_201',
     title: 'Drinking Water Tube-well Leakage',
@@ -414,7 +415,7 @@ export const GRIEVANCES: Grievance[] = [
   }
 ];
 
-export const PROJECTS: Project[] = [
+const DEFAULT_PROJECTS: Project[] = [
   {
     id: 'proj_301',
     name: 'Village Concrete Road Construction',
@@ -481,7 +482,7 @@ export const PROJECTS: Project[] = [
   }
 ];
 
-export const MOCK_SABHA_MEETING: SabhaMeeting = {
+const DEFAULT_MOCK_SABHA_MEETING: SabhaMeeting = {
   id: 'sabha_401',
   date: '2026-08-04',
   title: 'Loni Kalbhor Gram Sabha Monsoon Session',
@@ -566,7 +567,7 @@ export interface CitizenDocument {
   statusMr: string;
 }
 
-export const GOV_SCHEMES_FEED: GovernmentSchemeFeed[] = [
+const DEFAULT_GOV_SCHEMES_FEED: GovernmentSchemeFeed[] = [
   {
     id: 'scheme_solar_pump',
     name: 'Chief Minister Solar Agriculture Pump Subsidies',
@@ -598,7 +599,7 @@ export const GOV_SCHEMES_FEED: GovernmentSchemeFeed[] = [
   }
 ];
 
-export const CITIZEN_DOCUMENTS: CitizenDocument[] = [
+const DEFAULT_CITIZEN_DOCUMENTS: CitizenDocument[] = [
   {
     id: 'doc_101',
     citizenName: 'Savita Patil',
@@ -630,3 +631,13 @@ export const CITIZEN_DOCUMENTS: CitizenDocument[] = [
     statusMr: 'पडताळणी पूर्ण'
   }
 ];
+
+
+// Persisted arrays referencing getPersistentData
+export const SCHEMES: Scheme[] = getPersistentData('panchayat_schemes', DEFAULT_SCHEMES);
+export const CITIZENS: Citizen[] = getPersistentData('panchayat_citizens', DEFAULT_CITIZENS);
+export const GRIEVANCES: Grievance[] = getPersistentData('panchayat_grievances', DEFAULT_GRIEVANCES);
+export const PROJECTS: Project[] = getPersistentData('panchayat_projects', DEFAULT_PROJECTS);
+export const MOCK_SABHA_MEETING: SabhaMeeting = getPersistentData('panchayat_sabha_meeting', DEFAULT_MOCK_SABHA_MEETING);
+export const GOV_SCHEMES_FEED: GovernmentSchemeFeed[] = getPersistentData('panchayat_gov_schemes_feed', DEFAULT_GOV_SCHEMES_FEED);
+export const CITIZEN_DOCUMENTS: CitizenDocument[] = getPersistentData('panchayat_citizen_documents', DEFAULT_CITIZEN_DOCUMENTS);

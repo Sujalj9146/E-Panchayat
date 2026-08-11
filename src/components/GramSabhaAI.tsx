@@ -1,3 +1,4 @@
+import { savePersistentData } from '../lib/persistence';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -36,7 +37,7 @@ export const GramSabhaAI: React.FC = () => {
     // Simulate GraphRAG model pipeline
     setTimeout(() => {
       setUploading(false);
-      setMeeting({
+      const newMtg = {
         id: `sabha_${Date.now().toString().substring(8)}`,
         date: new Date().toISOString().split('T')[0],
         title: `Gram Sabha Extra Session (${file.name})`,
@@ -60,7 +61,7 @@ export const GramSabhaAI: React.FC = () => {
             responsible: 'Junior Engineer (Civil works)',
             responsibleMr: 'कनिष्ठ अभियंता (स्थापत्य)',
             deadline: '2026-08-25',
-            status: 'Pending',
+            status: 'Pending' as const,
             statusMr: 'प्रलंबित'
           },
           {
@@ -69,11 +70,13 @@ export const GramSabhaAI: React.FC = () => {
             responsible: 'Health Sub-centre Officer',
             responsibleMr: 'आरोग्य उपकेंद्र अधिकारी',
             deadline: '2026-08-18',
-            status: 'In Progress',
+            status: 'In Progress' as const,
             statusMr: 'सुरू असलेले'
           }
         ]
-      });
+      };
+      setMeeting(newMtg);
+      savePersistentData('panchayat_sabha_meeting', newMtg);
     }, 2500);
   };
 
@@ -94,10 +97,12 @@ export const GramSabhaAI: React.FC = () => {
       item.statusMr = 'प्रलंबित';
     }
 
-    setMeeting({
+    const newMtg = {
       ...meeting,
       actionItems: updatedActions
-    });
+    };
+    setMeeting(newMtg);
+    savePersistentData('panchayat_sabha_meeting', newMtg);
   };
 
   // Add action item manually
@@ -115,10 +120,12 @@ export const GramSabhaAI: React.FC = () => {
       statusMr: 'प्रलंबित'
     };
 
-    setMeeting({
+    const newMtg = {
       ...meeting,
       actionItems: [...meeting.actionItems, newAct]
-    });
+    };
+    setMeeting(newMtg);
+    savePersistentData('panchayat_sabha_meeting', newMtg);
 
     // Reset inputs
     setNewAction('');

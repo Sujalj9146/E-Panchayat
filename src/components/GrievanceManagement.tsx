@@ -1,3 +1,4 @@
+import { savePersistentData } from '../lib/persistence';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -36,6 +37,7 @@ export const GrievanceManagement: React.FC = () => {
     if (dbIndex !== -1) {
       GRIEVANCES[dbIndex].status = newStatus;
       GRIEVANCES[dbIndex].statusMr = statusMr;
+      savePersistentData('panchayat_grievances', GRIEVANCES);
     }
   };
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -173,6 +175,7 @@ export const GrievanceManagement: React.FC = () => {
 
     // Save also to memory/DB mock so other views like Map and Dashboard can see it
     GRIEVANCES.unshift(newGrievance);
+    savePersistentData('panchayat_grievances', GRIEVANCES);
 
     // Reset Form
     setTitle('');

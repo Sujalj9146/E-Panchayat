@@ -1,3 +1,4 @@
+import { savePersistentData } from '../lib/persistence';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -37,6 +38,7 @@ export const CitizenManagement: React.FC = () => {
       CITIZEN_DOCUMENTS[docIndex].status = 'Verified';
       CITIZEN_DOCUMENTS[docIndex].statusMr = 'पडताळणी पूर्ण';
       setDocList([...CITIZEN_DOCUMENTS]);
+      savePersistentData('panchayat_citizen_documents', CITIZEN_DOCUMENTS);
     }
   };
 
@@ -46,6 +48,7 @@ export const CitizenManagement: React.FC = () => {
       CITIZEN_DOCUMENTS[docIndex].status = 'Rejected';
       CITIZEN_DOCUMENTS[docIndex].statusMr = 'अस्वीकृत';
       setDocList([...CITIZEN_DOCUMENTS]);
+      savePersistentData('panchayat_citizen_documents', CITIZEN_DOCUMENTS);
     }
   };
 

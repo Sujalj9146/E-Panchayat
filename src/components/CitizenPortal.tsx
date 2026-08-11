@@ -1,3 +1,5 @@
+import { savePersistentData } from '../lib/persistence';
+import { callGeminiAPI } from '../lib/gemini';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -115,6 +117,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
     // Add to the front of shared data array
     CITIZEN_DOCUMENTS.unshift(newDoc);
     setCitizenDocs([...CITIZEN_DOCUMENTS]);
+    savePersistentData('panchayat_citizen_documents', CITIZEN_DOCUMENTS);
     setFileNameInput('');
     setUploadSuccess(true);
     setTimeout(() => setUploadSuccess(false), 3000);
@@ -233,6 +236,7 @@ export const CitizenPortal: React.FC<CitizenPortalProps> = ({
 
     setMyGrievances([newGrv, ...myGrievances]);
     GRIEVANCES.unshift(newGrv); // Sync with shared database
+    savePersistentData('panchayat_grievances', GRIEVANCES);
     setActiveGrievanceId(newGrv.id);
     
     setGrvTitle('');
@@ -380,33 +384,7 @@ const getGraphRAGResponse = (queryText: string, isEnglish: boolean, activeCitize
 };
 
   
-const callPortalGeminiAPI = async (prompt: string, key: string, isEnglish: boolean) => {
-  const context = `
-You are the official E-Panchayat GraphRAG AI Assistant for Loni Kalbhor (लोणी काळभोर) village, Pune, Maharashtra.
-Panchayat Status:
-- Citizens Registered: 10 (including Savita Patil, Amit Shinde, Anandrao Patil)
-- Infrastructure Projects: 4 (Concrete Road Construction in Ward 3 is Delayed at 65% progress, Budget 18 Lakhs; Digital Center Setup is Completed at 100% progress, Budget 3 Lakhs)
-- Unresolved Grievances: 5 (Water pipeline leakage near Maruti Temple, drainage clogging)
-- Next Sabha Meeting: August 20, 2026, at ZP School Ground.
-User query: "${prompt}"
-Language: ${isEnglish ? 'English' : 'Marathi'}.
-Please formulate a highly helpful, brief, and professional response in the requested language. Keep it under 4 sentences. Use markdown bold where appropriate.
-`;
 
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: context }] }]
-      })
-    });
-    const data = await res.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  } catch (err) {
-    return "";
-  }
-};
 
   const handleChatSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -420,7 +398,7 @@ Please formulate a highly helpful, brief, and professional response in the reque
     const isEnglish = i18n.language === 'en';
     
     if (GEMINI_API_KEY && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY_HERE') {
-      const gResult = await callPortalGeminiAPI(userText, GEMINI_API_KEY, isEnglish);
+      const gResult = await callGeminiAPI(userText, GEMINI_API_KEY, isEnglish, false);
       if (gResult) {
         setChatLog(prev => [...prev, {
           sender: 'ai',

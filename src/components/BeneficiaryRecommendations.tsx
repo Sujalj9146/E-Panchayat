@@ -1,3 +1,4 @@
+import { savePersistentData } from '../lib/persistence';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -66,6 +67,9 @@ export const BeneficiaryRecommendations: React.FC = () => {
         });
       }
       setSchemeFeed([...GOV_SCHEMES_FEED]);
+      savePersistentData('panchayat_gov_schemes_feed', GOV_SCHEMES_FEED);
+      savePersistentData('panchayat_gov_schemes_feed', GOV_SCHEMES_FEED);
+      savePersistentData('panchayat_schemes', SCHEMES);
     }
   };
 
@@ -74,6 +78,9 @@ export const BeneficiaryRecommendations: React.FC = () => {
     if (schemeIndex !== -1) {
       GOV_SCHEMES_FEED[schemeIndex].status = 'Rejected';
       setSchemeFeed([...GOV_SCHEMES_FEED]);
+      savePersistentData('panchayat_gov_schemes_feed', GOV_SCHEMES_FEED);
+      savePersistentData('panchayat_gov_schemes_feed', GOV_SCHEMES_FEED);
+      savePersistentData('panchayat_schemes', SCHEMES);
     }
   };
 

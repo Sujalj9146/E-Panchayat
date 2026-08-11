@@ -1,3 +1,4 @@
+import { savePersistentData } from '../lib/persistence';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -56,6 +57,7 @@ export const DevelopmentProjects: React.FC = () => {
 
     setProjectsList([...projectsList, newProject]);
     PROJECTS.push(newProject); // Sync with mock DB cache
+    savePersistentData('panchayat_projects', PROJECTS);
     
     // Reset Form
     setName('');
