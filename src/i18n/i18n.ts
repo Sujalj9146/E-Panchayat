@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
-      "app_title": "E-Panchayat AI",
+      "app_title": "E-Panchayat",
       "app_subtitle": "Decision Support System",
       "nav": {
         "dashboard": "Dashboard",
@@ -147,7 +147,7 @@ const resources = {
   },
   mr: {
     translation: {
-      "app_title": "ई-पंचायत AI",
+      "app_title": "ई-पंचायत",
       "app_subtitle": "निर्णय समर्थन प्रणाली",
       "nav": {
         "dashboard": "मुख्य फलक",
