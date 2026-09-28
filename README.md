@@ -1,4 +1,4 @@
-# 🏛️ Loni Kalbhor E-Panchayat Decision Support Portal
+# 🏛️ E-Panchayat Decision Support Portal
 
 An interactive, high-fidelity Government-Tech (Gov-Tech) portal and AI Administration System custom-designed for the **Loni Kalbhor** Gram Panchayat in Pune, Maharashtra. 
 
