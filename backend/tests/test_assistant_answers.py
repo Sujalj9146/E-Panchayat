@@ -79,3 +79,20 @@ def test_marathi_question_gets_marathi_answer(client, citizen):
 def test_open_questions_still_use_the_general_path(client, officer):
     body = _ask(client, officer, "how many projects are delayed")
     assert body["mode"] in ("retrieval_only", "llm", "unavailable")
+
+
+def test_a_shared_first_name_asks_which_resident(client, officer):
+    from app.db.session import SessionLocal
+    from app.models import Citizen
+    with SessionLocal() as db:
+        db.add(Citizen(id="cit_dup1", name="Sanjay", name_mr="संजय", age=30, gender="Male",
+                       gender_mr="पुरुष", occupation="Farmer", occupation_mr="शेतकरी",
+                       income=50000, ward=1, village_id="vil_loni_kalbhor"))
+        db.commit()
+    try:
+        text = _ask(client, officer, "is sanjay eligible for pm kisan")["answer"]
+        assert "Which resident do you mean?" in text and "Sanjay Patil" in text
+    finally:
+        with SessionLocal() as db:
+            db.delete(db.get(Citizen, "cit_dup1"))
+            db.commit()

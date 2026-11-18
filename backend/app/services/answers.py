@@ -173,7 +173,9 @@ def _strip_scheme_words(text: str, schemes: list[Scheme]) -> str:
 
 def _match_residents(text: str, residents: list[Citizen]) -> list[Citizen]:
     full = [c for c in residents if _norm(c.name) in text or (c.name_mr and _norm(c.name_mr) in text)]
-    if full:
+    # A full-name match on a multi-word name is unambiguous. A one-word name
+    # ("Poornima") is also every Poornima's first name, so it is not.
+    if full and all(len(_norm(c.name).split()) > 1 for c in full):
         return full
     first = []
     for c in residents:
