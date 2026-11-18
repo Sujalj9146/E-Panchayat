@@ -68,8 +68,10 @@ const CITIZEN_PRESETS = [
 const renderAnswer = (text: string) =>
   text.split('\n').map((line, i) => {
     const trimmed = line.trim();
-    const isBullet = trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.startsWith('*');
-    const content = isBullet ? trimmed.replace(/^[-•*]\s*/, '') : line;
+    // A bullet is a marker followed by a space. "**Bold title**" also starts
+    // with '*', and treating it as a bullet ate one asterisk and broke the bold.
+    const isBullet = /^[-•*]\s/.test(trimmed);
+    const content = isBullet ? trimmed.replace(/^[-•*]\s+/, '') : line;
 
     const parts = content.split('**').map((part, j) =>
       j % 2 === 1 ? <strong key={j}>{part}</strong> : part,
