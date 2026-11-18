@@ -138,6 +138,12 @@ class Settings(BaseSettings):
     # oracle open. Keeping the window short is what makes it bearable, and a
     # deployment that cares would add a CAPTCHA or an out-of-band unlock rather
     # than raise these numbers.
+    # bcrypt cost. 12 took ~2.5s per sign-in on Render's free instance, whose
+    # CPU share is a fraction of a core; 10 is ~4x faster and still the
+    # commonly recommended minimum. Existing hashes are re-made at this cost
+    # on the next successful sign-in.
+    BCRYPT_ROUNDS: int = 10
+
     LOGIN_WINDOW_MINUTES: int = 15
     LOGIN_MAX_FAILURES_PER_EMAIL: int = 5
     LOGIN_MAX_FAILURES_PER_IP: int = 20

@@ -33,6 +33,7 @@ from app.core.security import (
     generate_reset_code,
     hash_password,
     is_valid_aadhaar,
+    needs_rehash,
     normalise_aadhaar,
     normalise_reset_code,
     verify_password,
@@ -250,6 +251,8 @@ def login(
         return JSONResponse(status_code=202, content=challenge.model_dump(by_alias=True))
 
     user.last_login_at = datetime.now(timezone.utc)
+    if needs_rehash(user.hashed_password):
+        user.hashed_password = hash_password(body.password)
     # The number complaint SMS go to. Saved only here, after the password and
     # any new-device approval have both passed, so a held sign-in from an
     # unknown device cannot redirect someone's notifications.

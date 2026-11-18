@@ -278,3 +278,18 @@ def test_twilio_accepts_an_api_key_instead_of_the_auth_token(monkeypatch):
     assert sms.send_sms("+919876543210", "hi").status == "sent"
     assert seen["auth"] == ("SK_test", "key-secret")
     assert "/Accounts/AC_test/" in seen["url"]
+
+
+def test_sign_in_rehashes_a_password_made_at_an_old_cost(client):
+    import bcrypt
+    from app.core.security import needs_rehash
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "officer.theur@panchayat.gov.in"))
+        user.hashed_password = bcrypt.hashpw(PASSWORD.encode(), bcrypt.gensalt(rounds=12)).decode()
+        db.commit()
+    _headers(_login(client, "officer.theur@panchayat.gov.in"))
+    with SessionLocal() as db:
+        user = db.scalar(select(User).where(User.email == "officer.theur@panchayat.gov.in"))
+        assert not needs_rehash(user.hashed_password)
+        assert user.hashed_password.split("$")[2] == str(settings.BCRYPT_ROUNDS)
+    _headers(_login(client, "officer.theur@panchayat.gov.in"))  # still signs in

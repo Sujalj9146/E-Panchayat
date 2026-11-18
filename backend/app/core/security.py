@@ -51,7 +51,21 @@ def as_utc(value: datetime | None) -> datetime | None:
 
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    return bcrypt.hashpw(
+        plain.encode("utf-8"), bcrypt.gensalt(rounds=settings.BCRYPT_ROUNDS)
+    ).decode("utf-8")
+
+
+def needs_rehash(hashed: str) -> bool:
+    """True when a stored hash was made at a different cost than configured.
+
+    bcrypt checks a password at the cost stored in its hash, so lowering
+    BCRYPT_ROUNDS only speeds up sign-in once each hash is re-made. Sign-in
+    does that after a correct password, so no one has to reset anything."""
+    try:
+        return int(hashed.split("$")[2]) != settings.BCRYPT_ROUNDS
+    except (IndexError, ValueError):
+        return False
 
 
 def verify_password(plain: str, hashed: str) -> bool:
