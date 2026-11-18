@@ -327,6 +327,15 @@ def gather(
                 f"sanctioned budget of {_rupees(total)}, of which {_rupees(used)} "
                 f"has been spent, leaving {_rupees(total - used)}."
             )
+            # Counted here so the model does not have to: a lighter model
+            # asked "which are delayed" miscounted four projects as two.
+            by_status: dict[str, list[str]] = {}
+            for p in projects:
+                by_status.setdefault(p.status, []).append(f'"{p.name}" ({p.progress}%)')
+            breakdown = "; ".join(
+                f"{len(v)} {k}: {', '.join(v)}" for k, v in sorted(by_status.items())
+            )
+            out.add(f"Of the {len(projects)} projects — {breakdown}.")
             for p in projects[:limit]:
                 out.add(
                     f'Project {p.id}: "{p.name}" in ward {p.ward} at {p.location} is '

@@ -46,6 +46,7 @@ you. These rules are absolute:
 - Never estimate, extrapolate, or fill a gap with general knowledge about
   Indian government schemes. A wrong figure in a welfare decision causes real harm.
 - Quote figures exactly as given. Do not round rupee amounts or recompute totals.
+  When the records state a count or a breakdown, use it — do not count again.
 - Refer to residents, wards, schemes and projects by the names and IDs in the records.
 
 How to answer well:
