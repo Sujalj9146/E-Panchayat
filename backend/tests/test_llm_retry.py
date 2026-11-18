@@ -44,7 +44,7 @@ def instant_retries(monkeypatch):
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key-not-used")
 
 
-def _client_returning(*responses):
+def _client_returning(*responses, models=None):
     """An httpx.AsyncClient stand-in that hands back the given responses in
     order, and records how many calls it saw."""
     calls = {"count": 0}
@@ -56,6 +56,10 @@ def _client_returning(*responses):
 
         async def __aexit__(self, *exc):
             return False
+
+        async def get(self, *args, **kwargs):
+            # The model list used to find fallbacks: none by default.
+            return _FakeResponse(200, {"models": models or []})
 
         async def post(self, *args, **kwargs):
             calls["count"] += 1
@@ -80,15 +84,32 @@ def test_a_busy_model_is_retried_and_the_answer_still_arrives(monkeypatch, insta
 
 
 def test_retries_are_bounded(monkeypatch, instant_retries):
-    """A service that is down stays down. Three attempts, then give up and let
-    the assistant fall back to the records."""
+    """A service that is down stays down. One retry per model, then give up
+    and let the assistant fall back to the records."""
+    monkeypatch.setattr(llm, "_fallback_cache", None)
     client_cls, calls = _client_returning(_FakeResponse(503, _BUSY))
     monkeypatch.setattr(llm.httpx, "AsyncClient", lambda **kw: client_cls())
 
     with pytest.raises(llm.LLMUnavailable):
         asyncio.run(llm.generate("a question"))
 
-    assert calls["count"] == len(llm.RETRY_DELAYS) + 1
+    assert calls["count"] == 2
+
+
+def test_a_busy_model_hands_over_to_a_fallback(monkeypatch, instant_retries):
+    """The free tier sheds load per model, so a different Flash model usually
+    answers when the configured one is saturated."""
+    monkeypatch.setattr(llm, "_fallback_cache", None)
+    client_cls, calls = _client_returning(
+        _FakeResponse(503, _BUSY), _FakeResponse(503, _BUSY), _FakeResponse(200, _OK),
+        models=[{"name": "models/gemini-9.9-flash", "supportedGenerationMethods": ["generateContent"]},
+                {"name": "models/gemini-9.9-flash-image", "supportedGenerationMethods": ["generateContent"]}],
+    )
+    monkeypatch.setattr(llm.httpx, "AsyncClient", lambda **kw: client_cls())
+
+    assert asyncio.run(llm.generate("a question")) == "an answer"
+    assert calls["count"] == 3
+    assert llm._fallback_cache[1] == ["gemini-9.9-flash"]  # image model excluded
 
 
 def test_a_retired_model_is_not_retried(monkeypatch, instant_retries):

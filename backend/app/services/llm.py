@@ -12,6 +12,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
+import time
 from typing import Any
 
 import httpx
@@ -86,14 +88,65 @@ class LLMUnavailable(RuntimeError):
     """Raised when no key is configured or the upstream call fails."""
 
 
+# Discovered fallback models, cached per process: (fetched_at, [names]).
+_fallback_cache: tuple[float, list[str]] | None = None
+
+
+async def _fallback_models(client: httpx.AsyncClient) -> list[str]:
+    """Other Gemini Flash models this key can use, newest first.
+
+    Free-tier models shed load with 503 "high demand" for minutes at a time,
+    and which one is busy changes from hour to hour. Rather than pin a second
+    name that will itself be retired, ask the API which generateContent models
+    exist and keep the plain text Flash ones. GEMINI_FALLBACK_MODELS overrides
+    the discovery with a fixed, comma-separated list.
+    """
+    global _fallback_cache
+    if settings.GEMINI_FALLBACK_MODELS.strip():
+        return [m.strip() for m in settings.GEMINI_FALLBACK_MODELS.split(",") if m.strip()]
+    now = time.monotonic()
+    if _fallback_cache and now - _fallback_cache[0] < 3600:
+        return _fallback_cache[1]
+    names: list[str] = []
+    try:
+        resp = await client.get(f"{BASE}/models", headers=_auth_headers(), params={"pageSize": 200})
+        if resp.status_code == 200:
+            for m in resp.json().get("models", []):
+                name = m.get("name", "").removeprefix("models/")
+                if "generateContent" not in m.get("supportedGenerationMethods", []):
+                    continue
+                if "flash" not in name or any(
+                    bad in name for bad in ("image", "tts", "audio", "live", "embedding", "exp", "think")
+                ):
+                    continue
+                names.append(name)
+    except httpx.HTTPError:
+        pass
+
+    def version(n: str) -> tuple:
+        nums = re.findall(r"\d+(?:\.\d+)?", n)
+        # Prefer numbered, non-preview, non-lite models; newest version first.
+        return ("preview" in n, "lite" in n, -float(nums[0]) if nums else 0.0, n)
+
+    names = sorted(set(names) - {settings.GEMINI_MODEL}, key=version)[:3]
+    _fallback_cache = (now, names)
+    return names
+
+
 async def generate(
     prompt: str,
     system: str | None = None,
     *,
     json_schema: dict[str, Any] | None = None,
     temperature: float = 0.2,
-    timeout: float = 45.0,
+    timeout: float = 25.0,
 ) -> str:
+    """Generate text, falling back across models when one is busy.
+
+    Each model gets one quick retry; a model that is overloaded, unreachable
+    or retired (404) hands over to the next instead of making the person wait
+    through every retry. Total wait stays well under a minute.
+    """
     if not settings.ai_enabled:
         raise LLMUnavailable("GEMINI_API_KEY is not configured on the server.")
 
@@ -107,48 +160,58 @@ async def generate(
         body["generationConfig"]["responseMimeType"] = "application/json"
         body["generationConfig"]["responseSchema"] = json_schema
 
-    url = f"{BASE}/models/{settings.GEMINI_MODEL}:generateContent"
-
-    resp: httpx.Response | None = None
+    last_error = "Could not reach the language model."
+    started = time.monotonic()
     async with httpx.AsyncClient(timeout=timeout) as client:
-        for attempt in range(len(RETRY_DELAYS) + 1):
-            try:
-                resp = await client.post(url, headers=_auth_headers(), json=body)
-            except httpx.HTTPError as exc:
-                # A transport failure is as transient as a 503, and worth the
-                # same retry — but the last one has to surface.
-                if attempt == len(RETRY_DELAYS):
-                    log.warning("Gemini request failed: %s", exc)
-                    raise LLMUnavailable("Could not reach the language model.") from exc
-                await asyncio.sleep(RETRY_DELAYS[attempt])
-                continue
-
-            if resp.status_code not in TRANSIENT_STATUSES:
+        models = [settings.GEMINI_MODEL]
+        tried_fallbacks = False
+        i = 0
+        while i < len(models):
+            model = models[i]
+            i += 1
+            url = f"{BASE}/models/{model}:generateContent"
+            resp: httpx.Response | None = None
+            for attempt in range(2):
+                if time.monotonic() - started > 50:
+                    raise LLMUnavailable(last_error)
+                try:
+                    resp = await client.post(url, headers=_auth_headers(), json=body)
+                except httpx.HTTPError as exc:
+                    log.warning("Gemini %s request failed: %s", model, exc)
+                    last_error = "Could not reach the language model."
+                    resp = None
+                    # A dropped connection is worth one more try; a timeout
+                    # will just repeat, so hand over to the next model.
+                    if attempt == 0 and not isinstance(exc, httpx.TimeoutException):
+                        await asyncio.sleep(RETRY_DELAYS[0])
+                        continue
+                    break
+                if resp.status_code in TRANSIENT_STATUSES and attempt == 0:
+                    await asyncio.sleep(RETRY_DELAYS[0])
+                    continue
                 break
-            if attempt == len(RETRY_DELAYS):
-                break
-            log.info(
-                "Gemini returned %s, retrying in %ss",
-                resp.status_code,
-                RETRY_DELAYS[attempt],
-            )
-            await asyncio.sleep(RETRY_DELAYS[attempt])
 
-    assert resp is not None  # the loop either sets it or raises
-    if resp.status_code != 200:
-        log.warning("Gemini returned %s: %s", resp.status_code, resp.text[:500])
-        raise LLMUnavailable(_api_error("The language model", resp))
+            if resp is not None and resp.status_code == 200:
+                data = resp.json()
+                candidates = data.get("candidates") or []
+                parts = candidates[0].get("content", {}).get("parts", []) if candidates else []
+                text = "".join(p.get("text", "") for p in parts).strip()
+                if text:
+                    if model != settings.GEMINI_MODEL:
+                        log.info("Answered by fallback model %s", model)
+                    return text
+                last_error = "The language model returned an empty answer."
+            elif resp is not None:
+                log.warning("Gemini %s returned %s: %s", model, resp.status_code, resp.text[:300])
+                last_error = _api_error("The language model", resp)
+                if resp.status_code in (400, 401, 403):
+                    raise LLMUnavailable(last_error)  # a bad key or request: no model will help
 
-    data = resp.json()
-    candidates = data.get("candidates") or []
-    if not candidates:
-        raise LLMUnavailable("The language model returned no answer.")
+            if not tried_fallbacks:
+                tried_fallbacks = True
+                models += await _fallback_models(client)
 
-    parts = candidates[0].get("content", {}).get("parts", [])
-    text = "".join(p.get("text", "") for p in parts).strip()
-    if not text:
-        raise LLMUnavailable("The language model returned an empty answer.")
-    return text
+    raise LLMUnavailable(last_error)
 
 
 async def generate_json(

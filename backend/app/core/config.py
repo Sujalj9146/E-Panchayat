@@ -124,6 +124,9 @@ class Settings(BaseSettings):
     # size is what gets dropped under load.
     GEMINI_MODEL: str = "gemini-3.7-flash"
     GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
+    # Models tried when GEMINI_MODEL is busy (503), slow or retired. Empty means
+    # discover them from the API: the other text Flash models this key can use.
+    GEMINI_FALLBACK_MODELS: str = ""
 
     # ── Sign-in throttling ──────────────────────────────────────────────────
     #
