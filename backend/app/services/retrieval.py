@@ -210,36 +210,74 @@ async def gather_semantic(
         # have something useful, and an empty answer helps nobody.
         return gather(db, question, user, village_id)
 
-    # A resident's own answer is computed, never retrieved. Their eligibility
-    # verdicts come from the rule engine and exist in no chunk — and cannot,
-    # since residents are deliberately not indexed. So for a citizen the
-    # semantic hits are layered on top of the keyword pass rather than
-    # replacing it.
+    # The keyword pass always runs: it reads live rows and carries the totals
+    # and counts ("4 projects, 1 delayed") that a handful of nearest chunks
+    # cannot. Semantic hits are layered on top to add records the keywords
+    # missed.
     #
-    # Without this, a resident asking "which schemes am I eligible for" got a
-    # description of the schemes instead of their own answer: semantic search
-    # matched the scheme chunks, returned early, and the eligibility engine was
-    # never consulted. Running the app is what caught it; every test still
-    # passed, because they exercise the two paths separately.
-    if user.role == "citizen":
-        out = gather(db, question, user, village_id)
-        out.mode = "semantic"
-    else:
-        out = Retrieved()
-        out.mode = "semantic"
-        out.topics = sorted({h.chunk.entity_type for h in hits})
+    # Without the keyword pass an officer asking "which projects are delayed"
+    # got the two nearest project chunks and the model reported "1 of 2
+    # projects"; and a resident asking "which schemes am I eligible for" got
+    # scheme descriptions instead of their own computed answer.
+    out = gather(db, question, user, village_id)
+    out.mode = "semantic"
+    seen = {(s.entity_type, s.entity_id) for s in out.sources}
 
     for hit in hits:
-        # `indexer` does not build resident chunks, so `personal` should never
-        # be True here. It is set so that if someone reintroduces them, the
-        # assistant treats them as personal and withholds them from the model
-        # rather than quietly resuming the export this was written to stop.
+        kind, entity_id = hit.chunk.entity_type, hit.chunk.entity_id
+        # Residents are never prompt material, and an index built before that
+        # rule may still hold them. Skip rather than trust the index.
+        if kind == "citizen" or (kind, entity_id) in seen:
+            continue
+        # Chunks are a snapshot from when the index was built; statuses move
+        # on. Describe the record as it is now, and drop it if it is gone.
+        fact = _live_fact(db, kind, entity_id)
+        if fact is False:
+            continue
+        seen.add((kind, entity_id))
         out.add(
-            graph.describe(hit),
-            Source(hit.chunk.entity_type, hit.chunk.entity_id, hit.chunk.content[:80]),
-            personal=hit.chunk.entity_type == "citizen",
+            fact or graph.describe(hit),
+            Source(kind, entity_id, hit.chunk.content[:80]),
         )
     return out
+
+
+def _live_fact(db: Session, kind: str, entity_id: str) -> str | None | bool:
+    """The current state of an indexed record, in the same words `gather`
+    uses. None when the type has no live renderer (use the chunk text); False
+    when the record no longer exists."""
+    if kind == "project":
+        p = db.get(Project, entity_id)
+        if p is None:
+            return False
+        return (
+            f'Project {p.id}: "{p.name}" in ward {p.ward} at {p.location} is '
+            f"{p.status}, {p.progress}% complete, budget {_rupees(p.budget)}, "
+            f"spent {_rupees(p.utilized)}."
+        )
+    if kind == "grievance":
+        g = db.get(Grievance, entity_id)
+        if g is None:
+            return False
+        return (
+            f'Grievance {g.id}: "{g.title}" in ward {g.ward}, category {g.category}, '
+            f"priority {g.priority}, status {g.status}, with {g.department}, "
+            f"filed {g.submitted_date}."
+        )
+    if kind == "scheme":
+        s = db.get(Scheme, entity_id)
+        if s is None or s.status != "active":
+            return False
+        from app.services.answers import describe_criteria
+
+        rules = "; ".join(describe_criteria(s.criteria or {})) or "no fixed criteria"
+        return f'Scheme "{s.name}" ({s.level}, {s.category}): {s.benefit}. Who can apply: {rules}.'
+    if kind == "sabha_meeting":
+        m = db.get(SabhaMeeting, entity_id)
+        if m is None:
+            return False
+        return f'Gram Sabha on {m.meeting_date}: "{m.title}". {m.summary}'
+    return None
 
 
 def gather(
