@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,20 @@ class Settings(BaseSettings):
 
     # Database
     DATABASE_URL: str
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _use_psycopg3(cls, value: str) -> str:
+        """Accept the connection string exactly as Supabase or Render show it.
+
+        Those start postgresql:// (or postgres://), which SQLAlchemy maps to
+        psycopg2 — a driver this project does not install. Rewrite to the
+        psycopg 3 driver that requirements.txt does install."""
+        value = value.strip()
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value[len(prefix):]
+        return value
 
     # Auth
     SECRET_KEY: str
