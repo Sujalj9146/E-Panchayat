@@ -6,6 +6,31 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _encode_password(url: str) -> str:
+    """Percent-encode a password pasted raw into a database URL.
+
+    A password containing '@', ':' or '/' makes the URL ambiguous — the
+    address is read from the first '@', so 'pass@9146@host' looks for a host
+    called '9146@host'. The address always follows the LAST '@', so split
+    there and encode the password part. An already-encoded password is left
+    as it is."""
+    from urllib.parse import quote, unquote
+
+    scheme, sep, rest = url.partition("://")
+    if not sep or "@" not in rest:
+        return url
+    authority, slash, tail = rest.partition("/")
+    while "@" in tail.split("?")[0]:  # an '@' or '/' in the password split early
+        more, slash2, tail = tail.partition("/")
+        authority += slash + more
+        slash = slash2
+    userinfo, _, host = authority.rpartition("@")
+    user, colon, password = userinfo.partition(":")
+    if colon:
+        password = quote(unquote(password), safe="")
+    return f"{scheme}://{user}{colon}{password}@{host}{slash}{tail}"
+
+
 # The live website on Render. Always permitted by CORS in addition to
 # CORS_ORIGINS — see Settings.cors_origin_list.
 DEPLOYED_FRONTEND_ORIGINS = ("https://e-panchayat-ai.onrender.com",)
@@ -33,8 +58,9 @@ class Settings(BaseSettings):
         value = value.strip()
         for prefix in ("postgres://", "postgresql://"):
             if value.startswith(prefix):
-                return "postgresql+psycopg://" + value[len(prefix):]
-        return value
+                value = "postgresql+psycopg://" + value[len(prefix):]
+                break
+        return _encode_password(value)
 
     # Auth
     SECRET_KEY: str
