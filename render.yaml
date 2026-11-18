@@ -104,7 +104,7 @@ services:
       # source view. An API URL is public anyway; a key is not.
       #
       # Set this to the API service's URL plus /api/v1, e.g.
-      #   https://epanchayat-api.onrender.com/api/v1
+      #   https://epanchayat-api-ufr6.onrender.com/api/v1
       - key: VITE_API_URL
         sync: false
       # Vite 8 needs Node 20.19+; pin it so Render never builds on an older one.

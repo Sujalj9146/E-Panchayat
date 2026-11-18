@@ -14,7 +14,7 @@
 // The deployed API. Used when VITE_API_URL was not set at build time and the
 // page is not being served from this machine — a production build that fell
 // back to localhost would send every visitor's sign-in to their own computer.
-const PRODUCTION_API_URL = 'https://epanchayat-api.onrender.com/api/v1';
+const PRODUCTION_API_URL = 'https://epanchayat-api-ufr6.onrender.com/api/v1';
 
 const isLocalPage = () => {
   try {
