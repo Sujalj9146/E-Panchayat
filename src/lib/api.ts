@@ -11,9 +11,22 @@
  * the original request retried.
  */
 
+// The deployed API. Used when VITE_API_URL was not set at build time and the
+// page is not being served from this machine — a production build that fell
+// back to localhost would send every visitor's sign-in to their own computer.
+const PRODUCTION_API_URL = 'https://epanchayat-api.onrender.com/api/v1';
+
+const isLocalPage = () => {
+  try {
+    return ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+  } catch {
+    return true;
+  }
+};
+
 const BASE_URL =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ||
-  'http://localhost:8000/api/v1';
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/$/, '') ||
+  (isLocalPage() ? 'http://localhost:8000/api/v1' : PRODUCTION_API_URL);
 
 // Deliberately not prefixed `panchayat_` — that prefix is what
 // clearPersistentCache() wipes, and tokens are managed separately.

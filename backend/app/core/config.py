@@ -5,6 +5,11 @@ from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# The live website on Render. Always permitted by CORS in addition to
+# CORS_ORIGINS — see Settings.cors_origin_list.
+DEPLOYED_FRONTEND_ORIGINS = ("https://e-panchayat-ai.onrender.com",)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
@@ -130,7 +135,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        """CORS_ORIGINS plus the deployed website, which is always allowed so
+        a Render setting that omits it cannot lock the live site out."""
+        origins = [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        for origin in DEPLOYED_FRONTEND_ORIGINS:
+            if origin not in origins:
+                origins.append(origin)
+        return origins
 
     @property
     def ai_enabled(self) -> bool:

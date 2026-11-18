@@ -249,3 +249,13 @@ def test_turning_sms_off_sends_nothing(client, officer, monkeypatch):
         "title": "Street light", "description": "x", "ward": 2, "phone": "9811122233",
     })
     assert _sms_for(resp.json()["id"]) == []
+
+
+def test_the_live_website_is_always_allowed_by_cors(client):
+    r = client.options(f"{API}/auth/login", headers={
+        "Origin": "https://e-panchayat-ai.onrender.com",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+    })
+    assert r.status_code == 200
+    assert r.headers["access-control-allow-origin"] == "https://e-panchayat-ai.onrender.com"
