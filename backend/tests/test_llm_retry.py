@@ -112,6 +112,17 @@ def test_a_busy_model_hands_over_to_a_fallback(monkeypatch, instant_retries):
     assert llm._fallback_cache[1] == ["gemini-9.9-flash"]  # image model excluded
 
 
+def test_lite_models_are_among_the_fallbacks(monkeypatch, instant_retries):
+    monkeypatch.setattr(llm, "_fallback_cache", None)
+    names = ["gemini-9.9-flash", "gemini-9.8-flash", "gemini-9.7-flash", "gemini-9.9-flash-lite"]
+    client_cls, _ = _client_returning(_FakeResponse(503, _BUSY), models=[
+        {"name": f"models/{n}", "supportedGenerationMethods": ["generateContent"]} for n in names])
+    monkeypatch.setattr(llm.httpx, "AsyncClient", lambda **kw: client_cls())
+    with pytest.raises(llm.LLMUnavailable):
+        asyncio.run(llm.generate("q"))
+    assert "gemini-9.9-flash-lite" in llm._fallback_cache[1][:2]
+
+
 def test_a_retired_model_is_not_retried(monkeypatch, instant_retries):
     """404 means the name is gone, not busy. Retrying only makes the wrong
     answer slower, and the error text is what tells you to repin."""

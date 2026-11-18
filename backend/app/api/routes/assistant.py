@@ -221,7 +221,7 @@ async def model_check(_: User = Depends(require_officer)) -> dict:
 
     try:
         answer = await generate(
-            "Reply with the single word: ok", temperature=0, timeout=30.0
+            "Reply with the single word: ok", temperature=0, timeout=15.0
         )
     except LLMUnavailable as exc:
         return {

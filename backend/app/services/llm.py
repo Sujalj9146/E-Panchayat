@@ -125,10 +125,16 @@ async def _fallback_models(client: httpx.AsyncClient) -> list[str]:
 
     def version(n: str) -> tuple:
         nums = re.findall(r"\d+(?:\.\d+)?", n)
-        # Prefer numbered, non-preview, non-lite models; newest version first.
-        return ("preview" in n, "lite" in n, -float(nums[0]) if nums else 0.0, n)
+        # Non-preview first, newest version first.
+        return ("preview" in n, -float(nums[0]) if nums else 0.0, n)
 
-    names = sorted(set(names) - {settings.GEMINI_MODEL}, key=version)[:3]
+    pool = sorted(set(names) - {settings.GEMINI_MODEL}, key=version)
+    full = [n for n in pool if "lite" not in n]
+    lite = [n for n in pool if "lite" in n]
+    # One more full Flash, then the Lite models — which sit on separate, far
+    # less contended capacity and answer when every full Flash model is
+    # shedding load — then whatever full models remain.
+    names = (full[:1] + lite[:2] + full[1:])[:4]
     _fallback_cache = (now, names)
     return names
 
@@ -139,7 +145,7 @@ async def generate(
     *,
     json_schema: dict[str, Any] | None = None,
     temperature: float = 0.2,
-    timeout: float = 25.0,
+    timeout: float = 15.0,
 ) -> str:
     """Generate text, falling back across models when one is busy.
 
@@ -172,7 +178,7 @@ async def generate(
             url = f"{BASE}/models/{model}:generateContent"
             resp: httpx.Response | None = None
             for attempt in range(2):
-                if time.monotonic() - started > 50:
+                if time.monotonic() - started > 55:
                     raise LLMUnavailable(last_error)
                 try:
                     resp = await client.post(url, headers=_auth_headers(), json=body)
