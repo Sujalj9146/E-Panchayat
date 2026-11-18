@@ -65,17 +65,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     let cancelled = false;
 
-    api.auth
-      .me()
-      .then((me) => {
-        if (!cancelled) setUser(me);
-      })
-      .catch(() => {
-        clearTokens();
-      })
-      .finally(() => {
-        if (!cancelled) setInitialising(false);
-      });
+    // Only a 401 means the session is over. A server that is restarting or
+    // waking from sleep answers with a gateway error (seen by the browser as
+    // a CORS failure, status 0) or a 5xx — signing the user out for that
+    // logged everyone out during every redeploy. Retry instead; a cold start
+    // takes up to ~50 seconds.
+    const restore = async () => {
+      const delays = [2000, 4000, 8000, 15000, 25000];
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const me = await api.auth.me();
+          if (!cancelled) setUser(me);
+          return;
+        } catch (err) {
+          const transient =
+            err instanceof ApiError && (err.isOffline || err.status >= 500);
+          if (!transient || attempt >= delays.length) {
+            // Keep the tokens when the server never answered, so a reload
+            // later restores the session instead of demanding a new sign-in.
+            if (!transient) clearTokens();
+            return;
+          }
+          await new Promise((r) => setTimeout(r, delays[attempt]));
+          if (cancelled) return;
+        }
+      }
+    };
+
+    restore().finally(() => {
+      if (!cancelled) setInitialising(false);
+    });
 
     return () => {
       cancelled = true;
@@ -111,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const message =
         err instanceof ApiError
           ? err.isOffline
-            ? 'Cannot reach the server. Start the backend with: uvicorn app.main:app --port 8000'
+            ? 'Cannot reach the server right now — it may be starting up. Please try again in a moment.'
             : err.message
           : 'Something went wrong. Please try again.';
       setError(message);

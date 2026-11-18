@@ -215,22 +215,29 @@ const buildUrl = (path: string, params?: RequestOptions['params']): string => {
   return url.toString();
 };
 
-const attemptRefresh = async (): Promise<boolean> => {
-  if (!refreshToken) return false;
+/** 'ok' — new tokens; 'denied' — the server refused the refresh token, so
+ *  the session is over; 'offline' — the server did not answer (restarting or
+ *  waking up), which says nothing about the session and must not end it. */
+const attemptRefresh = async (): Promise<'ok' | 'denied' | 'offline'> => {
+  if (!refreshToken) return 'denied';
   try {
     const response = await fetch(buildUrl('/auth/refresh'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
     });
-    if (!response.ok) return false;
+    if (response.status === 401 || response.status === 403) return 'denied';
+    if (!response.ok) return 'offline';
     const data = await response.json();
     setTokens(data.accessToken, data.refreshToken);
-    return true;
+    return 'ok';
   } catch {
-    return false;
+    return 'offline';
   }
 };
+
+const OFFLINE_MESSAGE =
+  'Cannot reach the server right now — it may be starting up. Please try again in a moment.';
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, params, formData, anonymous } = options;
@@ -251,20 +258,20 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   try {
     response = await send();
   } catch {
-    throw new ApiError(
-      0,
-      'Cannot reach the server. Is the backend running on port 8000?',
-    );
+    throw new ApiError(0, OFFLINE_MESSAGE);
   }
 
   // One transparent retry after refreshing an expired access token.
   if (response.status === 401 && !anonymous && refreshToken) {
-    if (await attemptRefresh()) {
+    const refreshed = await attemptRefresh();
+    if (refreshed === 'ok') {
       try {
         response = await send();
       } catch {
-        throw new ApiError(0, 'Cannot reach the server.');
+        throw new ApiError(0, OFFLINE_MESSAGE);
       }
+    } else if (refreshed === 'offline') {
+      throw new ApiError(0, OFFLINE_MESSAGE);
     } else {
       clearTokens();
       onSessionExpired?.();
