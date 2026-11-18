@@ -5,7 +5,9 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from urllib.parse import quote
+
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -106,19 +108,17 @@ async def upload_document(
         )
 
     doc_id = f"doc_{uuid4().hex[:10]}"
-    suffix = Path(file.filename or "").suffix[:10]
-    target_dir = UPLOAD_ROOT / citizen_id
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target = target_dir / f"{doc_id}{suffix}"
-    target.write_bytes(payload)
 
+    # Stored in the database, not on disk: the deployed API's disk is wiped on
+    # every redeploy, which lost every resident upload while keeping the record.
     document = CitizenDocument(
         id=doc_id,
         citizen_id=citizen_id,
         doc_type=doc_type,
         doc_type_mr=doc_type_mr or doc_type,
-        file_name=file.filename or target.name,
-        storage_path=str(target),
+        file_name=file.filename or f"{doc_id}{Path(file.filename or '').suffix[:10]}",
+        storage_path=None,
+        file_data=payload,
         content_type=file.content_type,
         size_bytes=len(payload),
         status="Pending Verification",
@@ -153,6 +153,21 @@ def download_document(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No document with that ID.")
 
     assert_can_read_citizen(db, user, document.citizen_id)
+
+    if document.file_data:
+        name = document.file_name or "document"
+        ascii_name = name.encode("ascii", "ignore").decode().replace('"', "") or "document"
+        return Response(
+            content=document.file_data,
+            media_type=document.content_type or "application/octet-stream",
+            # inline: an officer verifying a document wants to look at it.
+            # filename* carries non-ASCII (Marathi) names, which a plain
+            # header cannot.
+            headers={
+                "Content-Disposition": f'inline; filename="{ascii_name}"; '
+                f"filename*=UTF-8''{quote(name)}"
+            },
+        )
 
     if not document.storage_path:
         raise HTTPException(

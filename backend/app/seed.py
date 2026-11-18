@@ -438,6 +438,7 @@ def seed_documents(db: Session, data: dict) -> None:
                 doc_type=req["name"], doc_type_mr=req.get("name_mr", req["name"]),
                 file_name=f"{slug.replace(' ', '_')}_{citizen_id}.pdf",
                 storage_path=str(path), content_type="application/pdf", size_bytes=size,
+                file_data=path.read_bytes(),
                 status="Verified", status_mr="पडताळणी पूर्ण",
                 submitted_date=date(2026, 8, 5),
                 verified_at=datetime(2026, 8, 7, tzinfo=timezone.utc),
@@ -456,6 +457,7 @@ def seed_documents(db: Session, data: dict) -> None:
             id=doc_id, citizen_id=citizen.id, doc_type=doc_type,
             doc_type_mr=doc_type_mr, file_name=f"aadhaar_{citizen_id}.pdf",
             storage_path=str(path), content_type="application/pdf", size_bytes=size,
+                file_data=path.read_bytes(),
             status=st, status_mr=st_mr, submitted_date=date(2026, 8, 9),
             rejection_reason=reason,
         ))
@@ -478,6 +480,7 @@ def seed_documents(db: Session, data: dict) -> None:
             doc_type=d["docType"], doc_type_mr=d["docTypeMr"],
             file_name=d["fileName"], status=d["status"], status_mr=d["statusMr"],
             storage_path=str(path), content_type="application/pdf", size_bytes=size,
+                file_data=path.read_bytes(),
             submitted_date=_date(d.get("submittedDate")) or date.today(),
         ))
         count += 1

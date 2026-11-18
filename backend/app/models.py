@@ -22,6 +22,7 @@ from sqlalchemy import (
     Index,
     Integer,
     JSON,
+    LargeBinary,
     Numeric,
     String,
     Text,
@@ -564,6 +565,11 @@ class CitizenDocument(Base, TimestampMixin):
     doc_type_mr: Mapped[str] = mapped_column(String(120), nullable=False)
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     storage_path: Mapped[str | None] = mapped_column(String(500))
+    # The file itself. Kept in the database because the API's disk is not
+    # permanent: on Render's free plan every redeploy or restart wipes it, and
+    # every resident upload went with it while the record survived. Deferred so
+    # listing documents never loads the bytes.
+    file_data: Mapped[bytes | None] = mapped_column(LargeBinary, deferred=True)
     content_type: Mapped[str | None] = mapped_column(String(120))
     size_bytes: Mapped[int | None] = mapped_column(Integer)
 
