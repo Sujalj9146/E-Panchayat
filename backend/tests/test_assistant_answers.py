@@ -115,3 +115,19 @@ def test_a_full_name_wins_over_a_one_word_name_inside_it(client, officer):
         with SessionLocal() as db:
             db.delete(db.get(Citizen, "cit_dup2"))
             db.commit()
+
+
+def test_officer_gets_a_named_residents_details(client, officer):
+    for q in ("details of anandrao patil", "who is Anandrao Patil", "anandrao patil"):
+        body = _ask(client, officer, q)
+        text = body["answer"]
+        assert body["mode"] == "retrieval_only_personal"
+        assert "**Anandrao Patil**" in text and "Annual income" in text and "Schemes:" in text
+        assert "do not contain" not in text
+
+
+def test_resident_gets_own_details_but_complaint_questions_are_not_profiles(client, citizen):
+    text = _ask(client, citizen, "show my details")["answer"]
+    assert "**Savita Patil**" in text and "Complaints:" in text
+    body = _ask(client, citizen, "tell me about my complaints")
+    assert "Annual income" not in body["answer"]

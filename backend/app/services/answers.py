@@ -75,6 +75,15 @@ INFO_WORDS = (
     "how do i apply", "documents required", "required documents", "about",
     "काय आहे", "माहिती", "निकष", "कोण पात्र", "अर्ज कसा",
 )
+PROFILE_WORDS = (
+    "details", "detail", "profile", "information", "info", "about", "who is",
+    "tell me", "record", "file", "summary", "my details", "my profile", "my record",
+    "माहिती", "तपशील", "नोंद", "कोण आहे",
+)
+SELF_PROFILE_WORDS = (
+    "my details", "my profile", "my record", "my information", "my info",
+    "about me", "my file", "my data", "माझी माहिती", "माझा तपशील", "माझी नोंद",
+)
 LIST_WORDS = ("list", "show", "all", "names", "who are", "यादी", "सर्व", "दाखवा")
 RESIDENT_WORDS = ("citizen", "citizens", "resident", "residents", "villagers", "people", "नागरिक", "रहिवासी")
 SELF_WORDS = (" i ", " me ", " my ", " mine ", " am i ", "मी", "माझ", "मला")
@@ -480,6 +489,80 @@ def _scheme_info(s: Scheme, mr: bool) -> list[str]:
     return lines
 
 
+def _profile(db: Session, c: Citizen, schemes: list[Scheme], is_citizen: bool, mr: bool) -> list[str]:
+    """One resident's file: who they are, what the record holds, and where
+    they stand — documents, complaints, schemes."""
+    from app.models import Grievance
+
+    yes, no = ("होय", "नाही") if mr else ("Yes", "No")
+    unknown = "नोंद नाही" if mr else "not recorded"
+
+    def val(v, suffix=""):
+        return f"{v}{suffix}" if v not in (None, "") else unknown
+
+    lines = [
+        f"**{_cname(c, mr)}** — {'वॉर्ड' if mr else 'ward'} {c.ward}, ID {c.id}",
+        f"- {'वय' if mr else 'Age'}: {c.age} · {'लिंग' if mr else 'Gender'}: {c.gender_mr if mr else c.gender}"
+        f" · {'व्यवसाय' if mr else 'Occupation'}: {c.occupation_mr if mr else c.occupation}",
+        f"- {'वार्षिक उत्पन्न' if mr else 'Annual income'}: {_rs(c.income)}",
+        f"- {'सामाजिक प्रवर्ग' if mr else 'Social category'}: {val(c.social_category)} · "
+        f"BPL: {yes if c.is_bpl else no} · SECC-2011: {yes if c.secc_listed else no}",
+        f"- {'शिधापत्रिका' if mr else 'Ration card'}: {val(c.ration_card_type)} · "
+        f"{'जमीन' if mr else 'Land'}: {val(c.land_holding_hectares, ' ha')} · "
+        f"{'वैवाहिक स्थिती' if mr else 'Marital status'}: {val(c.marital_status)}",
+        f"- {'अपंगत्व' if mr else 'Disability'}: {val(c.disability_percent, '%')}"
+        + (f" · Aadhaar: XXXX XXXX {c.aadhaar_last4}" if c.aadhaar_last4 else "")
+        + (f" · {'फोन' if mr else 'Phone'}: {c.phone}" if c.phone and not is_citizen else ""),
+    ]
+    if c.family:
+        lines.append(
+            f"- {'कुटुंब' if mr else 'Household'}: {c.family.name_mr if mr else c.family.name}"
+            + (f" ({c.relation_mr if mr else c.relation})" if c.relation else "")
+            + (f", {'कुटुंबप्रमुख' if mr else 'head of household'}" if c.is_head else "")
+        )
+
+    docs = list(c.documents)
+    by_status: dict[str, int] = {}
+    for d in docs:
+        by_status[d.status] = by_status.get(d.status, 0) + 1
+    lines.append(
+        f"- {'कागदपत्रे' if mr else 'Documents'}: {len(docs)}"
+        + (" (" + ", ".join(f"{n} {s}" for s, n in by_status.items()) + ")" if docs else "")
+    )
+
+    grievances = list(db.scalars(select(Grievance).where(Grievance.citizen_id == c.id)))
+    open_g = [g for g in grievances if g.status != "Resolved"]
+    lines.append(
+        f"- {'तक्रारी' if mr else 'Complaints'}: {len(grievances)} "
+        f"({len(open_g)} {'प्रलंबित' if mr else 'open'})"
+        + (": " + "; ".join(f'"{g.title}" ({g.status})' for g in open_g[:3]) if open_g else "")
+    )
+
+    results = _assess_all(c, schemes)
+    count = {k: sum(1 for a in results if a.status == k) for k in elig.STATUS_ORDER}
+    lines.append(
+        f"- {'योजना' if mr else 'Schemes'}: {count['Eligible']} {'पात्र' if mr else 'eligible now'}, "
+        f"{count['Missing Documents']} {'कागदपत्रे बाकी' if mr else 'need documents'}, "
+        f"{count['Needs Review']} {'तपासणी आवश्यक' if mr else 'need review'}"
+    )
+    missing = [k for k in ("social_category", "marital_status", "disability_percent", "land_holding_hectares", "ration_card_type")
+               if getattr(c, k) in (None, "")]
+    if c.occupation in ("Not recorded", "") or c.gender == "Other" or missing:
+        lines.append(
+            "नोंद अपूर्ण आहे — 'नागरिक' पानावरून ती पूर्ण केल्यास अधिक योजनांचा निर्णय स्पष्ट होईल."
+            if mr else
+            "The record is incomplete — completing it from the Citizens page lets more schemes get a clear Yes or No."
+        )
+    lines.append(
+        "विचारा: 'कोणती कागदपत्रे बाकी आहेत' किंवा 'कोणत्या योजनांसाठी पात्र'."
+        if mr else
+        f"Ask next: \"what documents is {c.name} missing\" or \"which schemes is {c.name} eligible for\"."
+        if not is_citizen else
+        "Ask next: \"what documents am I missing\" or \"which schemes am I eligible for\"."
+    )
+    return lines
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
@@ -589,6 +672,17 @@ def answer(
                 lines.append("")
             lines += _scheme_info(s, mr)
         return Direct("\n".join(lines), sources, personal=False)
+
+    # ── One resident's profile ──────────────────────────────────────────────
+    # An officer naming a resident ("details of X", "who is X", or just the
+    # name) wants that person's file. Without this the question fell through
+    # to the model, which is never given resident records, and it replied
+    # that the records held nothing about them.
+    # For a resident "about"/"record" are too broad ("tell me about my
+    # complaints"), so only an explicit request for their own profile counts.
+    asks_profile = _has(text, SELF_PROFILE_WORDS) if is_citizen else _has(text, PROFILE_WORDS)
+    if subject and (asks_profile or (not is_citizen and named)):
+        return Direct("\n".join(_profile(db, subject, schemes, is_citizen, mr)), sources, personal=True)
 
     # ── Officer: list residents ─────────────────────────────────────────────
     if not is_citizen and asks_list:
