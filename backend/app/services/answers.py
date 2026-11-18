@@ -175,8 +175,11 @@ def _match_residents(text: str, residents: list[Citizen]) -> list[Citizen]:
     full = [c for c in residents if _norm(c.name) in text or (c.name_mr and _norm(c.name_mr) in text)]
     # A full-name match on a multi-word name is unambiguous. A one-word name
     # ("Poornima") is also every Poornima's first name, so it is not.
-    if full and all(len(_norm(c.name).split()) > 1 for c in full):
-        return full
+    # "Poornima Rayavarapu" contains the one-word name "Poornima", so when a
+    # multi-word name matches in full it wins over any one-word match.
+    multi = [c for c in full if len(_norm(c.name).split()) > 1]
+    if multi:
+        return multi
     first = []
     for c in residents:
         given = _norm(c.name).split()

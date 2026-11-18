@@ -96,3 +96,22 @@ def test_a_shared_first_name_asks_which_resident(client, officer):
         with SessionLocal() as db:
             db.delete(db.get(Citizen, "cit_dup1"))
             db.commit()
+
+
+def test_a_full_name_wins_over_a_one_word_name_inside_it(client, officer):
+    from app.db.session import SessionLocal
+    from app.models import Citizen
+    with SessionLocal() as db:
+        db.add(Citizen(id="cit_dup2", name="Savita", name_mr="सविता", age=30, gender="Female",
+                       gender_mr="स्त्री", occupation="Farmer", occupation_mr="शेतकरी",
+                       income=50000, ward=1, village_id="vil_loni_kalbhor"))
+        db.commit()
+    try:
+        text = _ask(client, officer, "Is Savita Patil eligible for old age pension")["answer"]
+        assert "Which resident" not in text and "Savita Patil" in text
+        text = _ask(client, officer, "Is savita eligible for old age pension")["answer"]
+        assert "Which resident do you mean?" in text
+    finally:
+        with SessionLocal() as db:
+            db.delete(db.get(Citizen, "cit_dup2"))
+            db.commit()
