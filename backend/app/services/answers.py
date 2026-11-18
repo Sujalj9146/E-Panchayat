@@ -545,8 +545,9 @@ def _profile(db: Session, c: Citizen, schemes: list[Scheme], is_citizen: bool, m
         f"{count['Missing Documents']} {'कागदपत्रे बाकी' if mr else 'need documents'}, "
         f"{count['Needs Review']} {'तपासणी आवश्यक' if mr else 'need review'}"
     )
-    missing = [k for k in ("social_category", "marital_status", "disability_percent", "land_holding_hectares", "ration_card_type")
-               if getattr(c, k) in (None, "")]
+    # Only what most scheme rules depend on. No disability or land on record
+    # is normal, not a gap.
+    missing = [k for k in ("social_category", "marital_status") if getattr(c, k) in (None, "")]
     if c.occupation in ("Not recorded", "") or c.gender == "Other" or missing:
         lines.append(
             "नोंद अपूर्ण आहे — 'नागरिक' पानावरून ती पूर्ण केल्यास अधिक योजनांचा निर्णय स्पष्ट होईल."
