@@ -30,7 +30,7 @@ from app.core.deps import get_current_user, require_officer, village_scope
 from app.db.session import get_db
 from app.models import User
 from app.schemas import AssistantAnswer, AssistantQuery, RetrievedSource
-from app.services import retrieval
+from app.services import answers, retrieval
 from app.services.llm import LLMUnavailable, generate
 
 router = APIRouter(prefix="/assistant", tags=["assistant"])
@@ -47,7 +47,16 @@ you. These rules are absolute:
   Indian government schemes. A wrong figure in a welfare decision causes real harm.
 - Quote figures exactly as given. Do not round rupee amounts or recompute totals.
 - Refer to residents, wards, schemes and projects by the names and IDs in the records.
-- Be brief: four sentences at most unless a list is genuinely clearer.
+
+How to answer well:
+- Answer the exact question first, in the opening sentence. Then give only the
+  supporting facts that matter for it. Ignore records that are not relevant —
+  the supplied records are broader than any one question needs.
+- When the question asks for a comparison, a count, the highest/lowest, or what
+  is delayed or overdue, work it out from the records and state the result
+  (e.g. "2 of 4 projects are behind schedule: X (68%) and Y (45%)").
+- Use a short bulleted list when there are several items; otherwise prose.
+- End with one practical next step when there is an obvious one.
 - Write in the requested language. When writing Marathi, use natural Marathi,
   not transliterated English."""
 
@@ -62,6 +71,8 @@ absolute:
 - Never mention another resident's information.
 - Be warm, plain and practical. Say what the person can do next: which document
   to upload, which office to visit, which form to fill.
+- Answer the exact question first. Ignore supplied records that are not
+  relevant to it.
 - Keep it to four sentences unless a short list is clearer.
 - Write in the requested language, in natural Marathi where asked."""
 
@@ -79,6 +90,32 @@ async def ask(
     village_id = village_scope(user)
     if user.role == "citizen" and user.village_id:
         village_id = user.village_id
+
+    # Precise questions — "what documents am I missing", "is X eligible for Y",
+    # "what is scheme Z" — have one right answer that the rule engine computes.
+    # Those are answered directly, verdict first, rather than by listing loosely
+    # related records or asking a model to reason about welfare rules.
+    direct = answers.answer(db, body.query, user, village_id, body.language)
+    if direct is not None:
+        text = direct.text
+        if direct.personal:
+            # The privacy guarantee is only reassuring if the reader is told.
+            text += (
+                "\n\n(हे उत्तर तुमच्या नोंदींवरून नियमांनुसार काढले आहे — माहिती कोणत्याही "
+                "बाहेरील AI सेवेकडे पाठवली जात नाही.)"
+                if body.language == "mr" else
+                "\n\n(Worked out by the Panchayat's rule engine from the records — this "
+                "information is never sent outside this system.)"
+            )
+        return AssistantAnswer(
+            answer=text,
+            sources=[
+                RetrievedSource(entity_type=s.entity_type, entity_id=s.entity_id, title=s.title)
+                for s in direct.sources
+            ],
+            mode="retrieval_only_personal" if direct.personal else "direct",
+            retrieval="keyword",
+        )
 
     # Semantic first; this falls back to keyword routing on its own if the
     # index is not built or the embedding call fails.

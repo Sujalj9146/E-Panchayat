@@ -220,7 +220,7 @@ export const AIAssistant: React.FC = () => {
                           the badge reassures rather than apologises. */}
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${
-                          turn.answer.mode === 'llm'
+                          turn.answer.mode === 'llm' || turn.answer.mode === 'direct'
                             ? 'bg-govblue-50 text-govnavy border-govnavy/25'
                             : turn.answer.mode === 'retrieval_only_personal'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
@@ -245,6 +245,13 @@ export const AIAssistant: React.FC = () => {
                             {isEnglish
                               ? 'Your data — kept in the Panchayat'
                               : 'तुमची माहिती — पंचायतीतच'}
+                          </>
+                        ) : turn.answer.mode === 'direct' ? (
+                          /* A precise question (a scheme's rules, who
+                             qualifies) answered by the rule engine itself. */
+                          <>
+                            <ShieldCheck size={9} />
+                            {isEnglish ? 'Computed from records' : 'नोंदींवरून काढलेले'}
                           </>
                         ) : turn.answer.mode === 'unavailable' ? (
                           /* A configured key whose upstream refused — not the

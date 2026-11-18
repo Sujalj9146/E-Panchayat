@@ -798,7 +798,7 @@ export interface AssistantAnswer {
    *  - 'retrieval_only_personal' read straight from the records on purpose:
    *                              the answer concerns one resident's own file,
    *                              which is never sent to an outside AI service */
-  mode: 'llm' | 'retrieval_only' | 'retrieval_only_personal' | 'unavailable';
+  mode: 'llm' | 'retrieval_only' | 'retrieval_only_personal' | 'unavailable' | 'direct';
 }
 
 /** What the assistant retrieved, without calling the model. Makes the

@@ -98,7 +98,8 @@ TOPIC_KEYWORDS: dict[str, list[str]] = {
         "सभा", "बैठक", "निर्णय", "ठराव", "कार्यवाही",
     ],
     "documents": [
-        "document", "certificate", "aadhaar", "upload", "verify", "verification",
+        "document", "docs", "doc ", "papers", "paperwork", "certificate", "aadhaar",
+        "upload", "verify", "verification",
         "कागदपत्र", "दाखला", "आधार", "पडताळणी",
     ],
     "village": [
@@ -375,10 +376,16 @@ def gather(
                         personal=True,
                     )
         else:
+            # Rules in words, not the raw criteria dictionary — both a model and
+            # a reader reason far better from "Age 60 or above; on the BPL list"
+            # than from "{'min_age': 60, 'requires_bpl': True}".
+            from app.services.answers import describe_criteria
+
             for scheme in active[:limit]:
+                rules = "; ".join(describe_criteria(scheme.criteria or {})) or "no fixed criteria"
                 out.add(
                     f'Scheme "{scheme.name}" ({scheme.level}, {scheme.category}): '
-                    f"{scheme.benefit}. Criteria: {scheme.criteria}.",
+                    f"{scheme.benefit}. Who can apply: {rules}.",
                     Source("scheme", scheme.id, scheme.name),
                 )
 

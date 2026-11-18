@@ -796,7 +796,9 @@ class AssistantAnswer(ApiModel):
     # The last two read the same to a user unless they are told apart, and they
     # mean very different things — one is a degraded service, the other is the
     # privacy rule working.
-    mode: Literal["llm", "retrieval_only", "retrieval_only_personal", "unavailable"]
+    #   direct                   computed by the rule engine / records for a
+    #                            precise question (a scheme's rules, who qualifies)
+    mode: Literal["llm", "retrieval_only", "retrieval_only_personal", "unavailable", "direct"]
     # How the records were found: by embedding similarity plus graph expansion,
     # or by keyword routing. Reported rather than assumed, because the semantic
     # path silently falls back and the reader deserves to know which ran.
