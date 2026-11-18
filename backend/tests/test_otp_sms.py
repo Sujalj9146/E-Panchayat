@@ -94,6 +94,8 @@ def test_no_number_means_no_sms_and_says_so(client, twilio):
 
 
 def test_a_failed_send_voids_the_code_and_does_not_use_up_the_hour(client, twilio, monkeypatch):
+    monkeypatch.setattr(settings, "OTP_DEMO_MODE", False)
+
     def down(*a, **k):
         raise httpx.ConnectError("down")
 
@@ -118,3 +120,14 @@ def test_console_mode_never_logs_the_code(client, caplog, monkeypatch):
 
 def test_message_states_validity():
     assert f"{settings.OTP_TTL_MINUTES} minutes" in notify.otp_message("123456")
+
+
+def test_in_demo_mode_a_failed_sms_still_shows_the_code(client, twilio, monkeypatch):
+    monkeypatch.setattr(settings, "OTP_DEMO_MODE", True)
+    monkeypatch.setattr(sms.httpx, "post", lambda *a, **k: httpx.Response(
+        400, json={"message": "Trial accounts can only use predefined SMS templates."}))
+    r = _request(client)
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["demoOtp"]
+    assert not any(s.startswith("SMS") for s in body["sentTo"])

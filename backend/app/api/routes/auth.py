@@ -681,7 +681,7 @@ def request_otp(
     phone = _recovery_phone(user)
     sms_result = notify.send_otp(otp, phone=phone, email=user.email)
 
-    if sms_result is not None and sms_result.status == "failed":
+    if sms_result is not None and sms_result.status == "failed" and not settings.OTP_DEMO_MODE:
         # The gateway refused it or could not be reached. The code reached
         # nobody, so it is voided rather than left live, and the attempt does
         # not count toward the hourly cap — the resident did nothing wrong.
@@ -697,7 +697,9 @@ def request_otp(
         )
 
     ratelimit.record(db, email=email, ip=ip, outcome="otp_sent", user_id=user.id)
-    sms_went = sms_result is not None  # 'sent', or 'logged' by the console provider
+    # 'sent', or 'logged' by the console provider. In demo mode a failed send
+    # falls through to here and the code is shown on screen instead.
+    sms_went = sms_result is not None and sms_result.status != "failed"
 
     return OtpSent(
         sent_to=[*([_mask_phone(phone)] if sms_went and phone else []), _mask_email(user.email)],
