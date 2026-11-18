@@ -31,6 +31,40 @@ def _encode_password(url: str) -> str:
     return f"{scheme}://{user}{colon}{password}@{host}{slash}{tail}"
 
 
+def _via_supabase_pooler(url: str) -> str:
+    """Route Supabase's direct address through its session pooler.
+
+    db.<ref>.supabase.co resolves to IPv6 only, and Render has no outbound
+    IPv6, so the direct string pasted from Supabase can never connect from
+    there ("Name or service not known"). The session pooler takes the same
+    password on an IPv4 address, with the user written postgres.<ref>.
+    SUPABASE_POOLER_HOST names the pooler for the project's region."""
+    import os
+    import re
+
+    from sqlalchemy.engine import make_url
+
+    if "supabase.co" not in url:
+        return url
+    parsed = make_url(url)
+    match = re.fullmatch(r"db\.([a-z0-9]+)\.supabase\.co", parsed.host or "")
+    if not match:
+        return url
+    ref = match.group(1)
+    user = parsed.username or "postgres"
+    if "." not in user:
+        user = f"{user}.{ref}"
+    query = dict(parsed.query)
+    query.setdefault("sslmode", "require")
+    pooled = parsed.set(
+        host=os.environ.get("SUPABASE_POOLER_HOST", "aws-0-ap-northeast-1.pooler.supabase.com"),
+        port=5432,
+        username=user,
+        query=query,
+    )
+    return pooled.render_as_string(hide_password=False)
+
+
 # The live website on Render. Always permitted by CORS in addition to
 # CORS_ORIGINS — see Settings.cors_origin_list.
 DEPLOYED_FRONTEND_ORIGINS = ("https://e-panchayat-ai.onrender.com",)
@@ -60,7 +94,7 @@ class Settings(BaseSettings):
             if value.startswith(prefix):
                 value = "postgresql+psycopg://" + value[len(prefix):]
                 break
-        return _encode_password(value)
+        return _via_supabase_pooler(_encode_password(value))
 
     # Auth
     SECRET_KEY: str
