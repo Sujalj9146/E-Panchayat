@@ -22,17 +22,24 @@ import {
   ChevronDown,
   Sparkles,
   MapPin,
+  Phone,
+  MessageSquare,
+  X,
 } from 'lucide-react';
 
 import {
   api,
+  isMobileNumber,
+  maskPhone,
   type Classification,
   type Grievance,
   type GrievanceDetail,
   type GrievanceStatus,
 } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { useMutation, useQuery } from '../lib/useApi';
 import { EmptyState, ErrorNotice } from './schemes/SchemeBits';
+import { SmsLog } from './SmsLog';
 
 const STAGES: GrievanceStatus[] = ['Pending', 'In Progress', 'Resolved'];
 
@@ -205,6 +212,10 @@ const GrievanceCard: React.FC<{ grievance: Grievance; isEnglish: boolean }> = ({
           {detail.error && <ErrorNotice message={detail.error} onRetry={detail.refetch} />}
 
           {detail.data && (
+            <SmsLog notifications={detail.data.smsNotifications ?? []} isEnglish={isEnglish} />
+          )}
+
+          {detail.data && (
             <ol className="space-y-0">
               {detail.data.events.map((event, i, all) => (
                 <li key={event.id} className="flex gap-3">
@@ -255,25 +266,38 @@ const GrievanceCard: React.FC<{ grievance: Grievance; isEnglish: boolean }> = ({
 export const CitizenGrievances: React.FC = () => {
   const { i18n } = useTranslation();
   const isEnglish = i18n.language === 'en';
+  const { user } = useAuth();
 
   const [filing, setFiling] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [ward, setWard] = useState(1);
+  // Where this complaint's SMS go. Starts as the number signed in with.
+  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [preview, setPreview] = useState<Classification | null>(null);
+  const [filed, setFiled] = useState<Grievance | null>(null);
 
   const grievances = useQuery<Grievance[]>(() => api.grievances.list(), []);
 
   const file = useMutation(
-    () => api.grievances.create({ title, description, ward }),
-    () => {
+    () => api.grievances.create({ title, description, ward, phone: phone.trim() || undefined }),
+    (created) => {
       setTitle('');
       setDescription('');
       setPreview(null);
       setFiling(false);
+      setFiled(created);
       grievances.refetch();
     },
   );
+
+  const openForm = () => {
+    setPhone(user?.phone ?? '');
+    setPhoneError(null);
+    setFiled(null);
+    setFiling(true);
+  };
 
   // Show the citizen where their complaint will be routed before they send it,
   // so the classification is something they can correct rather than a surprise.
@@ -317,7 +341,7 @@ export const CitizenGrievances: React.FC = () => {
 
         {!filing && (
           <button
-            onClick={() => setFiling(true)}
+            onClick={openForm}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-govnavy hover:bg-govblue-700 text-white text-xs font-bold transition-colors shadow-sm"
           >
             <Plus size={14} />
@@ -326,11 +350,52 @@ export const CitizenGrievances: React.FC = () => {
         )}
       </header>
 
+      {/* Confirmation, including where the SMS is going. */}
+      {filed && !filing && (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-start gap-3"
+        >
+          <MessageSquare size={18} className="text-govgreen flex-shrink-0 mt-0.5" />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <p className="text-sm font-bold text-emerald-900 m-0">
+              {isEnglish ? 'Complaint registered' : 'तक्रार नोंदवली'}
+              <span className="font-mono font-normal text-xs text-emerald-700"> · {filed.id}</span>
+            </p>
+            <p className="text-xs text-emerald-800 m-0 leading-relaxed">
+              {filed.phone
+                ? isEnglish
+                  ? `A confirmation SMS is being sent to ${maskPhone(filed.phone)}. You will get another SMS when an officer accepts it and when it is resolved.`
+                  : `${maskPhone(filed.phone)} या क्रमांकावर पुष्टीकरण एसएमएस पाठवला जात आहे. अधिकाऱ्याने तक्रार स्वीकारल्यावर व निकाली निघाल्यावर पुन्हा एसएमएस येईल.`
+                : isEnglish
+                  ? 'No mobile number was given, so no SMS will be sent. Track it below.'
+                  : 'मोबाइल क्रमांक नसल्याने एसएमएस पाठवला जाणार नाही. खाली स्थिती पहा.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiled(null)}
+            aria-label={isEnglish ? 'Dismiss' : 'बंद करा'}
+            className="p-1 rounded text-emerald-700 hover:bg-emerald-100"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* Filing form */}
       {filing && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (!isMobileNumber(phone)) {
+              setPhoneError(
+                isEnglish
+                  ? 'Enter a valid 10-digit mobile number for SMS updates.'
+                  : 'एसएमएस सूचनांसाठी वैध १० अंकी मोबाइल क्रमांक टाका.',
+              );
+              return;
+            }
             file.run();
           }}
           className="bg-white rounded-xl border border-slate-200 p-4 space-y-4"
@@ -384,19 +449,53 @@ export const CitizenGrievances: React.FC = () => {
             />
           </div>
 
-          <div className="space-y-1.5 max-w-[140px]">
-            <label htmlFor="g-ward" className="block text-xs font-bold text-slate-600">
-              {isEnglish ? 'Ward' : 'वॉर्ड'}
-            </label>
-            <input
-              id="g-ward"
-              type="number"
-              min={1}
-              max={20}
-              value={ward}
-              onChange={(e) => setWard(Number(e.target.value))}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-govnavy/25"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
+            <div className="space-y-1.5">
+              <label htmlFor="g-ward" className="block text-xs font-bold text-slate-600">
+                {isEnglish ? 'Ward' : 'वॉर्ड'}
+              </label>
+              <input
+                id="g-ward"
+                type="number"
+                min={1}
+                max={20}
+                value={ward}
+                onChange={(e) => setWard(Number(e.target.value))}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-govnavy/25"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="g-phone" className="block text-xs font-bold text-slate-600">
+                {isEnglish ? 'Mobile number for SMS updates' : 'एसएमएस सूचनांसाठी मोबाइल क्रमांक'}
+              </label>
+              <div className="relative">
+                <Phone size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  id="g-phone"
+                  type="tel"
+                  inputMode="tel"
+                  required
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setPhoneError(null);
+                  }}
+                  placeholder="98XXXXXXXX"
+                  aria-invalid={Boolean(phoneError)}
+                  className={`w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-govnavy/25 ${
+                    phoneError ? 'border-rose-300' : 'border-slate-200'
+                  }`}
+                />
+              </div>
+              <p className={`text-[11px] m-0 ${phoneError ? 'text-rose-600 font-semibold' : 'text-slate-500'}`}>
+                {phoneError ??
+                  (isEnglish
+                    ? 'You will get an SMS when it is registered, accepted and resolved.'
+                    : 'तक्रार नोंदवल्यावर, स्वीकारल्यावर व निकाली निघाल्यावर एसएमएस येईल.')}
+              </p>
+            </div>
           </div>
 
           {preview && (

@@ -70,11 +70,13 @@ For the report and the viva. Every line here survives being clicked on.
 | Transcript reader | Real text extraction plus an LLM call with a response schema. |
 | Scheme reader | Same, with a closed criteria vocabulary and a mandatory human approval gate. |
 | Vector storage | Embeddings stored as JSON, cosine similarity computed in Python. Correct at village scale (67 chunks — villages, schemes, projects, facilities, grievances and meetings, no residents); see `KnowledgeChunk` in `app/models.py` for what changes at district scale. |
+| Complaint SMS | The complainant is texted when a complaint is registered, accepted (→ In Progress) and resolved, on the mobile number given at sign-in or on the form. Sent in a background task through a pluggable provider — `console` (logs only, the default), Twilio or Fast2SMS — and every attempt is recorded in `sms_notifications` and shown on the complaint. See [SMS notifications](#sms-notifications). |
 | GIS map | Leaflet over OpenStreetMap tiles. No API key, no account. Markers are drawn from the API's own coordinates; the basemap is the only external dependency, and the screen says so when it fails to load. 18 of the 23 villages have a verified centre point — see below. |
 
 Things this system does **not** have, stated plainly: no trained or fine-tuned
 model of our own, no OCR for scanned documents, no Aadhaar or DigiLocker
-integration, no SMS or payment gateway, and only two languages.
+integration, no payment gateway, no email relay, and only two languages. SMS
+is wired up for complaint updates and password-reset OTPs (see below).
 
 ---
 
@@ -121,6 +123,49 @@ Everything lives in `backend/.env`, which is gitignored and must stay that way.
 | `GEMINI_MODEL` | Pin a specific model. Google retires names, and the failure is confusing — see below |
 | `CORS_ORIGINS` | Exact frontend origin, comma-separated, no trailing slash |
 | `SEED_DEFAULT_PASSWORD` | Password given to every demo account |
+| `SMS_PROVIDER` | `console` (default — logs, sends nothing), `twilio` or `fast2sms` |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` | Required when `SMS_PROVIDER=twilio` |
+| `FAST2SMS_API_KEY` | Required when `SMS_PROVIDER=fast2sms` (Indian numbers only) |
+| `GRIEVANCE_SMS_ENABLED` | `false` turns complaint SMS off entirely |
+
+### SMS notifications
+
+The sign-in form asks for a mobile number. It is validated (a 10-digit Indian
+mobile, optionally with `0`, `91` or `+91`, or any `+`-prefixed international
+number), stored on the account in E.164 form when sign-in succeeds, and
+remembered by the browser so it need not be retyped. Resident sign-up asks for
+one too, and it carries over to the account when an officer approves it.
+
+| When | Who triggers it | SMS |
+|---|---|---|
+| Complaint filed | Resident (or officer, for a walk-in) | *registered* — reference number, Gram Panchayat and department |
+| Status → In Progress | Officer clicks **Accept** | *accepted* — work has started |
+| Status → Resolved | Officer clicks **Mark resolved** | *resolved* — includes the officer's note |
+| Back to Pending | Officer reopens it | *reopened* |
+
+The number used is, in order: the one typed on the complaint form, the one the
+resident signed in with, then the one on the village register. A walk-in
+complaint logged by an officer never falls back to the officer's own number.
+
+Delivery runs after the response is sent, so a slow gateway never delays a
+save, and a gateway failure never turns a save into an error. Each attempt is
+written to `sms_notifications` with its outcome — `sent`, `failed` (with the
+gateway's reason, shown to officers), `logged` (console provider) or `skipped`
+(no valid number) — and both the officer's panel and the resident's tracking
+view show that log on the complaint.
+
+Password-reset OTPs go through the same gateway. The OTP is sent to the
+village register's number, or the sign-in number if the register has none. If
+the gateway fails, the code is voided and the resident is told to retry or
+visit the office; the failed attempt does not count toward the hourly OTP cap.
+`OTP_DEMO_MODE=true` still shows the code on screen for demos, except when a
+real SMS has carried it. Set it to `false` in any real deployment.
+
+To send real messages, set `SMS_PROVIDER=twilio` (a Twilio trial account can
+text only numbers you have verified with Twilio) or `SMS_PROVIDER=fast2sms`,
+fill in that provider's keys, and restart the API. Run `alembic upgrade head`
+first: this feature adds the `users.phone` column and the
+`sms_notifications` table.
 
 ### Village coordinates
 

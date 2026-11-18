@@ -3,7 +3,7 @@
 from datetime import date
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -21,6 +21,7 @@ from app.schemas import (
     GrievanceOut,
     GrievanceUpdate,
 )
+from app.services import sms
 from app.services.classifier import PRIORITY_MR, classify
 
 router = APIRouter(prefix="/grievances", tags=["grievances"])
@@ -99,11 +100,14 @@ def list_grievances(
 @router.post("", response_model=GrievanceOut, status_code=status.HTTP_201_CREATED)
 def create_grievance(
     body: GrievanceCreate,
+    background: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> Grievance:
     """Anyone signed in may file. Category, priority and routing department are
-    assigned by the classifier unless an officer supplies them explicitly."""
+    assigned by the classifier unless an officer supplies them explicitly.
+
+    The complainant is sent a "registered" SMS once the complaint is saved."""
     result = classify(body.title, body.description)
 
     citizen: Citizen | None = None
@@ -132,7 +136,7 @@ def create_grievance(
         longitude=body.longitude,
         citizen_id=citizen.id if citizen else None,
         citizen_name=citizen_name,
-        phone=body.phone or (citizen.phone if citizen else None),
+        phone=_notification_phone(body.phone, user, citizen),
         submitted_date=date.today(),
         auto_classified=not overridden,
         # A complaint belongs to the filer's village, or the officer's.
@@ -148,7 +152,25 @@ def create_grievance(
     )
     db.commit()
     db.refresh(grievance)
+    # After the commit, so the SMS can never announce a complaint that failed
+    # to save, and in the background, so a slow gateway cannot hold up filing.
+    background.add_task(sms.notify_grievance, grievance.id, "registered")
     return grievance
+
+
+def _notification_phone(given: str | None, user: User, citizen: Citizen | None) -> str | None:
+    """Where this complaint's SMS go.
+
+    A number typed on the form wins. A resident who leaves it out is notified
+    on the number they signed in with, then the one on the village register.
+    An officer logging a walk-in complaint never falls back to their own
+    number: the SMS are for the complainant, not the officer.
+    """
+    if given:
+        return given  # already validated and normalised by the schema
+    if user.role != "citizen":
+        return None
+    return sms.normalise_phone(user.phone) or sms.normalise_phone(citizen.phone if citizen else None)
 
 
 @router.get("/{grievance_id}", response_model=GrievanceDetail)
@@ -159,7 +181,7 @@ def get_grievance(
 ) -> Grievance:
     grievance = db.scalar(
         select(Grievance)
-        .options(selectinload(Grievance.events))
+        .options(selectinload(Grievance.events), selectinload(Grievance.sms_notifications))
         .where(Grievance.id == grievance_id)
     )
     if grievance is None:
@@ -181,9 +203,12 @@ def get_grievance(
 def update_grievance(
     grievance_id: str,
     body: GrievanceUpdate,
+    background: BackgroundTasks,
     officer: User = Depends(require_officer),
     db: Session = Depends(get_db),
 ) -> Grievance:
+    """Officer update. Accepting a complaint (→ In Progress), resolving it, or
+    reopening it sends the complainant an SMS saying so."""
     grievance = db.get(Grievance, grievance_id)
     if grievance is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No grievance with that ID.")
@@ -191,6 +216,7 @@ def update_grievance(
 
     data = body.model_dump(exclude_unset=True)
     note = data.get("officer_notes")
+    sms_event: str | None = None
 
     if (new_status := data.get("status")) is not None and new_status != grievance.status:
         previous = grievance.status
@@ -202,6 +228,7 @@ def update_grievance(
             from_status=previous, to_status=new_status,
             note=note,
         )
+        sms_event = sms.event_for_status(previous, new_status)
 
     if (new_priority := data.get("priority")) is not None and new_priority != grievance.priority:
         previous_priority = grievance.priority
@@ -229,6 +256,12 @@ def update_grievance(
 
     db.commit()
     db.refresh(grievance)
+    if sms_event:
+        # The resolved SMS carries the officer's closing note, if any.
+        background.add_task(
+            sms.notify_grievance, grievance.id, sms_event,
+            grievance.officer_notes if sms_event == "resolved" else None,
+        )
     return grievance
 
 

@@ -78,9 +78,10 @@ class Settings(BaseSettings):
     # so the endpoint cannot be used to flood a resident's phone.
     OTP_TTL_MINUTES: int = 10
     OTP_MAX_PER_HOUR: int = 3
-    # No SMS or email gateway is wired up yet. In demo mode the OTP is returned
-    # in the API response (and logged) so the flow can be shown end to end.
-    # Set to false once a real gateway is configured in services/notify.py.
+    # The OTP is sent by SMS through SMS_PROVIDER (see services/sms.py). In demo
+    # mode it is also returned in the API response so the flow can be shown
+    # without a gateway — but never once a real SMS has carried it. Set false
+    # in any deployment holding real residents.
     OTP_DEMO_MODE: bool = True
 
     # A sign-in from a device the account has not used before waits this long
@@ -100,6 +101,26 @@ class Settings(BaseSettings):
     @property
     def device_check_exempt(self) -> set[str]:
         return {e.strip().lower() for e in self.DEVICE_CHECK_EXEMPT_EMAILS.split(",") if e.strip()}
+
+    # ── SMS notifications ───────────────────────────────────────────────────
+    #
+    # A complainant gets an SMS when their complaint is registered, when an
+    # officer accepts it, and when it is resolved (see services/sms.py).
+    #
+    #   console   — no gateway: the message is logged and recorded as 'logged'.
+    #               The default, so nothing is sent by accident from a laptop.
+    #   twilio    — needs TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER.
+    #   fast2sms  — Indian gateway; needs FAST2SMS_API_KEY. Indian numbers only.
+    SMS_PROVIDER: str = "console"
+    # Master switch for complaint SMS. Off means no attempt is made at all.
+    GRIEVANCE_SMS_ENABLED: bool = True
+    # Prefixed to a bare 10-digit mobile number to make it E.164.
+    SMS_DEFAULT_COUNTRY_CODE: str = "91"
+    SMS_TIMEOUT_SECONDS: float = 10.0
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_FROM_NUMBER: str = ""
+    FAST2SMS_API_KEY: str = ""
 
     # CORS — comma separated in the environment
     CORS_ORIGINS: str = "http://localhost:5173"

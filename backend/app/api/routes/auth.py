@@ -40,6 +40,7 @@ from app.core.security import (
 from app.db.session import get_db
 from app.models import AuthAttempt, Citizen, KnownDevice, LoginChallenge, PasswordReset, RegistrationRequest, User, Village
 from app.services import notify, ratelimit
+from app.services.sms import normalise_phone
 from app.schemas import (
     LoginChallengeOut,
     LoginChallengeStatus,
@@ -50,6 +51,7 @@ from app.schemas import (
     PasswordChange,
     PasswordResetIssued,
     PasswordResetRedeem,
+    PhoneUpdate,
     RefreshRequest,
     RegistrationCreate,
     RegistrationDecision,
@@ -248,6 +250,11 @@ def login(
         return JSONResponse(status_code=202, content=challenge.model_dump(by_alias=True))
 
     user.last_login_at = datetime.now(timezone.utc)
+    # The number complaint SMS go to. Saved only here, after the password and
+    # any new-device approval have both passed, so a held sign-in from an
+    # unknown device cannot redirect someone's notifications.
+    if body.phone:
+        user.phone = body.phone
     db.commit()
     ratelimit.record(
         db, email=email, ip=ip, outcome="ok", successful=True, user_id=user.id
@@ -378,6 +385,19 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)) -> TokenPair:
 
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)) -> User:
+    return user
+
+
+@router.put("/me/phone", response_model=UserOut)
+def update_my_phone(
+    body: PhoneUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    """Change the mobile number complaint SMS are sent to."""
+    user.phone = body.phone
+    db.commit()
+    db.refresh(user)
     return user
 
 
@@ -648,25 +668,61 @@ def request_otp(
         .where(PasswordReset.used_at.is_(None))
     ):
         old.used_at = now
-    db.add(PasswordReset(
+    reset = PasswordReset(
         id=f"pwr_{uuid4().hex[:16]}",
         user_id=user.id,
         hashed_code=hash_password(otp),
         issued_by_id=None,  # None marks a self-service OTP
         expires_at=now + timedelta(minutes=settings.OTP_TTL_MINUTES),
-    ))
+    )
+    db.add(reset)
     db.commit()
 
-    phone = user.citizen.phone if user.citizen else None
-    sent_to = notify.send_otp(otp, phone=phone, email=user.email)
+    phone = _recovery_phone(user)
+    sms_result = notify.send_otp(otp, phone=phone, email=user.email)
+
+    if sms_result is not None and sms_result.status == "failed":
+        # The gateway refused it or could not be reached. The code reached
+        # nobody, so it is voided rather than left live, and the attempt does
+        # not count toward the hourly cap — the resident did nothing wrong.
+        reset.used_at = datetime.now(timezone.utc)
+        db.commit()
+        ratelimit.record(db, email=email, ip=ip, outcome="otp_send_failed", user_id=user.id)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "We could not send the OTP SMS right now. Try again in a few "
+                "minutes, or visit the Panchayat office for a reset code."
+            ),
+        )
+
     ratelimit.record(db, email=email, ip=ip, outcome="otp_sent", user_id=user.id)
+    sms_went = sms_result is not None  # 'sent', or 'logged' by the console provider
 
     return OtpSent(
-        sent_to=[*( [_mask_phone(phone)] if phone else []), _mask_email(user.email)]
-        if sent_to else [],
+        sent_to=[*([_mask_phone(phone)] if sms_went and phone else []), _mask_email(user.email)],
         expires_in_minutes=settings.OTP_TTL_MINUTES,
-        demo_otp=otp if settings.OTP_DEMO_MODE else None,
+        # Demo mode shows the code on screen — but never once a real SMS has
+        # carried it, or the SMS would prove nothing about who holds the phone.
+        demo_otp=(
+            otp
+            if settings.OTP_DEMO_MODE and not (sms_result and sms_result.status == "sent")
+            else None
+        ),
     )
+
+
+def _recovery_phone(user: User) -> str | None:
+    """The number a password-reset OTP goes to.
+
+    The village register's number comes first: an officer verified it, and
+    proving you hold it is what an OTP is for. The number given at sign-in is
+    the fallback for residents whose register entry has none. It is weaker —
+    anyone who once signed in could have set it — but without it most
+    residents would have no self-service recovery at all.
+    """
+    register = user.citizen.phone if user.citizen else None
+    return normalise_phone(register) or normalise_phone(user.phone)
 
 
 @router.post("/forgot-password/verify", status_code=status.HTTP_204_NO_CONTENT)
@@ -953,6 +1009,9 @@ def decide_registration(
             role="citizen",
             citizen_id=citizen.id,
             village_id=citizen.village_id,
+            # The number the applicant gave becomes their SMS number until
+            # they sign in with another.
+            phone=normalise_phone(req.phone),
         )
     )
     req.status = "approved"

@@ -66,6 +66,32 @@ export const setSessionExpiredHandler = (fn: (() => void) | null) => {
 /** True when the text is a 12-digit Aadhaar number, spaces or dashes allowed. */
 export const isAadhaar = (value: string): boolean => /^\d{12}$/.test(value.replace(/[\s-]/g, ''));
 
+/**
+ * True when the text is a mobile number that can receive SMS. Mirrors
+ * `normalise_phone` in backend/app/services/sms.py, which has the final say:
+ * a 10-digit Indian mobile (starts 6-9), optionally prefixed by 0, 91 or +91,
+ * or an international number written with a leading +.
+ */
+export const isMobileNumber = (value: string): boolean => {
+  const raw = value.trim();
+  let digits = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) {
+    if (digits.startsWith('91') && digits.length === 12) return /^[6-9]\d{9}$/.test(digits.slice(2));
+    return digits.length >= 8 && digits.length <= 15;
+  }
+  if (digits.startsWith('00')) return isMobileNumber(`+${digits.slice(2)}`);
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  else if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  return /^[6-9]\d{9}$/.test(digits);
+};
+
+/** "+919876543210" → "******3210", for saying where an SMS went. */
+export const maskPhone = (phone: string | null | undefined): string => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  return `******${digits.slice(-4)}`;
+};
+
 const accountIdentifier = (value: string) =>
   isAadhaar(value)
     ? { aadhaar: value.replace(/[\s-]/g, '') }
@@ -325,6 +351,8 @@ export interface User {
   role: Role;
   citizenId: string | null;
   villageId: string | null;
+  /** Where complaint SMS go, in E.164 form. Set from the sign-in form. */
+  phone: string | null;
   isActive: boolean;
   lastLoginAt: string | null;
 }
@@ -606,9 +634,24 @@ export interface GrievanceEvent {
   createdAt: string;
 }
 
+/** One SMS the server tried to send about a complaint, and what happened. */
+export interface SmsNotification {
+  id: string;
+  event: 'registered' | 'accepted' | 'resolved' | 'reopened';
+  phoneMasked: string | null;
+  message: string;
+  provider: string;
+  /** sent: accepted by the gateway · logged: console provider, not sent ·
+   *  failed: gateway refused / unreachable · skipped: no valid number. */
+  status: 'sent' | 'logged' | 'failed' | 'skipped';
+  error: string | null;
+  createdAt: string;
+}
+
 /** One complaint with its recorded history — what the tracking view reads. */
 export interface GrievanceDetail extends Grievance {
   events: GrievanceEvent[];
+  smsNotifications: SmsNotification[];
 }
 
 export interface Classification {
@@ -773,12 +816,25 @@ export const api = {
     /** `identifier` is an email address or a 12-digit Aadhaar number. */
     /** Resolves to tokens, or — from a device this account has not used
      *  before — to a challenge awaiting the owner's approval (HTTP 202). */
-    login: (identifier: string, password: string): Promise<TokenPair | LoginChallenge> =>
+    login: (
+      identifier: string,
+      password: string,
+      phone?: string,
+    ): Promise<TokenPair | LoginChallenge> =>
       request('/auth/login', {
         method: 'POST',
-        body: { ...accountIdentifier(identifier), password, ...deviceInfo() },
+        body: {
+          ...accountIdentifier(identifier),
+          password,
+          ...(phone ? { phone: phone.trim() } : {}),
+          ...deviceInfo(),
+        },
         anonymous: true,
       }),
+
+    /** Change the mobile number complaint SMS are sent to. */
+    updatePhone: (phone: string): Promise<User> =>
+      request('/auth/me/phone', { method: 'PUT', body: { phone } }),
 
     pollChallenge: (challengeId: string, pollToken: string): Promise<LoginChallengeStatus> =>
       request(`/auth/login-challenges/${challengeId}?poll=${encodeURIComponent(pollToken)}`, {

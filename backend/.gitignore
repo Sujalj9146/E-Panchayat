@@ -7,3 +7,6 @@ __pycache__/
 uploads/
 .pytest_cache/
 .mypy_cache/
+
+# Local SQLite database created by DATABASE_URL=sqlite:///./local.db
+local.db

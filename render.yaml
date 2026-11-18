@@ -45,6 +45,19 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
+      # Complaint SMS. console logs only; set twilio or fast2sms and fill that
+      # provider's keys to send real messages. See README → SMS notifications.
+      - key: SMS_PROVIDER
+        value: console
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: FAST2SMS_API_KEY
+        sync: false
+
       # The website's exact origin, e.g. https://epanchayat-web.onrender.com
       # — scheme and host, no trailing slash, no path.
       #

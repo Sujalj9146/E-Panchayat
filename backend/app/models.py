@@ -177,6 +177,12 @@ class User(Base, TimestampMixin):
         String(64), ForeignKey("villages.id", ondelete="SET NULL"), index=True
     )
 
+    # The mobile number given at sign-in, in E.164 form (+91XXXXXXXXXX). This
+    # is where complaint SMS go. Kept apart from Citizen.phone, which is the
+    # village register's number and what an officer matches applicants against
+    # — a sign-in should not be able to rewrite the register.
+    phone: Mapped[str | None] = mapped_column(String(20))
+
     citizen: Mapped[Citizen | None] = relationship(back_populates="user")
 
 
@@ -431,6 +437,45 @@ class Grievance(Base, TimestampMixin):
         back_populates="grievance", cascade="all, delete-orphan",
         order_by="GrievanceEvent.created_at",
     )
+    sms_notifications: Mapped[list[SmsNotification]] = relationship(
+        back_populates="grievance", cascade="all, delete-orphan",
+        order_by="SmsNotification.created_at",
+    )
+
+
+class SmsNotification(Base):
+    """One SMS the system tried to send about a complaint, and what happened.
+
+    Written for every attempt, including the ones that were not sent, so an
+    officer can answer "did the resident get told?" from the record rather
+    than from the gateway's dashboard. The number is stored masked: the full
+    one is already on the grievance, and this table is a delivery log.
+    """
+
+    __tablename__ = "sms_notifications"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    grievance_id: Mapped[str] = mapped_column(
+        String(64), ForeignKey("grievances.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    # 'registered' | 'accepted' | 'resolved' | 'reopened'
+    event: Mapped[str] = mapped_column(String(30), nullable=False)
+    phone_masked: Mapped[str | None] = mapped_column(String(30))
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    # 'console' | 'twilio' | 'fast2sms'
+    provider: Mapped[str] = mapped_column(String(30), nullable=False)
+    # 'sent' — accepted by the gateway; 'logged' — console provider, not sent;
+    # 'failed' — the gateway refused or could not be reached;
+    # 'skipped' — no valid phone number on the complaint.
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    provider_message_id: Mapped[str | None] = mapped_column(String(120))
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True
+    )
+
+    grievance: Mapped[Grievance] = relationship(back_populates="sms_notifications")
 
 
 class GrievanceEvent(Base):

@@ -12,6 +12,24 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from app.services.sms import normalise_phone
+
+_PHONE_HELP = (
+    "Enter a valid 10-digit mobile number (it can start with +91 or 0), "
+    "or an international number starting with +."
+)
+
+
+def _phone_or_none(value: str | None) -> str | None:
+    """Blank means no number; anything else must be a real mobile number,
+    returned in E.164 form so every stored number has the same shape."""
+    if value is None or not str(value).strip():
+        return None
+    normalised = normalise_phone(str(value))
+    if normalised is None:
+        raise ValueError(_PHONE_HELP)
+    return normalised
+
 
 def to_camel(s: str) -> str:
     head, *rest = s.split("_")
@@ -51,6 +69,14 @@ class LoginRequest(_AccountIdentifier):
     # A random id the browser generates once and keeps; see KnownDevice.
     device_id: str | None = Field(default=None, max_length=100)
     device_label: str | None = Field(default=None, max_length=200)
+    # The mobile number complaint SMS go to. Optional for API clients; the
+    # sign-in form asks for it. Stored on the account when sign-in succeeds.
+    phone: str | None = Field(default=None, max_length=30)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _phone_or_none(value)
 
 
 class TokenPair(ApiModel):
@@ -105,8 +131,18 @@ class UserOut(ApiModel):
     role: Role
     citizen_id: str | None = None
     village_id: str | None = None
+    phone: str | None = None
     is_active: bool
     last_login_at: datetime | None = None
+
+
+class PhoneUpdate(ApiModel):
+    phone: str = Field(min_length=1, max_length=30)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _phone_or_none(value)
 
 
 class UserCreate(ApiModel):
@@ -136,6 +172,11 @@ class RegistrationCreate(ApiModel):
     claimed_citizen_id: str | None = None
     village_id: str | None = None
     note: str | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _phone_or_none(value)
 
 
 class RegistrationOut(ApiModel):
@@ -478,9 +519,16 @@ class GrievanceCreate(ApiModel):
     description_mr: str | None = None
     ward: int
     citizen_name: str | None = None
-    phone: str | None = None
+    # Where the registration / accepted / resolved SMS go. A resident who
+    # leaves it out is notified on the number they signed in with.
+    phone: str | None = Field(default=None, max_length=30)
     latitude: float | None = None
     longitude: float | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        return _phone_or_none(value)
     # Optional overrides; the classifier fills these when omitted.
     category: str | None = None
     priority: Priority | None = None
@@ -532,11 +580,23 @@ class GrievanceOut(ApiModel):
     village_id: str | None = None
 
 
+class SmsNotificationOut(ApiModel):
+    id: str
+    event: str
+    phone_masked: str | None = None
+    message: str
+    provider: str
+    status: str
+    error: str | None = None
+    created_at: datetime
+
+
 class GrievanceDetail(GrievanceOut):
     """A single complaint with its full history — what the citizen's tracking
     view reads."""
 
     events: list[GrievanceEventOut] = []
+    sms_notifications: list[SmsNotificationOut] = []
 
 
 # ─────────────────────────────────────────────────────────────────────────────

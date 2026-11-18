@@ -34,6 +34,7 @@ import {
   Filter,
   Loader2,
   Megaphone,
+  MessageSquare,
   Plus,
   Sparkles,
   UserCheck,
@@ -42,6 +43,7 @@ import {
 
 import {
   api,
+  isMobileNumber,
   type Classification,
   type DashboardStats,
   type Grievance,
@@ -52,6 +54,7 @@ import {
 } from '../lib/api';
 import { useMutation, useQuery } from '../lib/useApi';
 import { EmptyState, ErrorNotice } from './schemes/SchemeBits';
+import { SmsLog } from './SmsLog';
 
 const STATUSES: GrievanceStatus[] = ['Pending', 'In Progress', 'Resolved'];
 const PRIORITIES: Priority[] = ['Low', 'Medium', 'High', 'Critical'];
@@ -78,6 +81,16 @@ const PRIORITY_STYLE: Record<string, string> = {
   High: 'bg-amber-50 text-amber-900 border-amber-300',
   Medium: 'bg-sky-50 text-sky-900 border-sky-300',
   Low: 'bg-slate-100 text-slate-600 border-slate-300',
+};
+
+/** The SMS a move to this status sends the complainant. Mirrors
+ *  `event_for_status` in backend/app/services/sms.py. */
+const smsFor = (from: GrievanceStatus, to: GrievanceStatus): { en: string; mr: string } | null => {
+  if (from === to) return null;
+  if (to === 'In Progress') return { en: '“accepted”', mr: '“स्वीकारली”' };
+  if (to === 'Resolved') return { en: '“resolved”', mr: '“निकाली”' };
+  if (to === 'Pending') return { en: '“reopened”', mr: '“पुन्हा उघडली”' };
+  return null;
 };
 
 const formatDate = (value: string, isEnglish: boolean) =>
@@ -136,13 +149,35 @@ const DetailPanel: React.FC<{
 
   const dirty = Object.keys(changes).length > 0;
 
-  const save = useMutation(
-    () => api.grievances.update(grievanceId, changes),
-    () => {
-      detail.refetch();
-      onSaved();
-    },
+  // Bumped on every successful save, to re-read the SMS delivery log.
+  const [savedCount, setSavedCount] = useState(0);
+  const afterSave = () => {
+    detail.refetch();
+    onSaved();
+    setSavedCount((n) => n + 1);
+  };
+
+  const save = useMutation(() => api.grievances.update(grievanceId, changes), afterSave);
+
+  // One-click accept / resolve. Carries any note typed so far, so a closing
+  // remark goes out in the "resolved" SMS.
+  const quick = useMutation(
+    (next: GrievanceStatus) =>
+      api.grievances.update(grievanceId, {
+        status: next,
+        ...(record && notes !== (record.officerNotes ?? '') ? { officerNotes: notes } : {}),
+      }),
+    afterSave,
   );
+
+  // The SMS is sent in the background after the save has returned, so the
+  // first re-read can miss it. Read once more a moment later.
+  const { refetch } = detail;
+  useEffect(() => {
+    if (savedCount === 0) return undefined;
+    const timer = window.setTimeout(refetch, 2500);
+    return () => window.clearTimeout(timer);
+  }, [savedCount, refetch]);
 
   return (
     <div
@@ -268,10 +303,47 @@ const DetailPanel: React.FC<{
                   </h3>
                   <p className="text-[11px] text-slate-600 leading-relaxed mt-1 m-0">
                     {isEnglish
-                      ? 'Saving records an entry in this complaint’s history. The complainant sees it on their own tracking page.'
-                      : 'जतन केल्यास या तक्रारीच्या इतिहासात नोंद होते आणि ती तक्रारदाराला त्यांच्या पृष्ठावर दिसते.'}
+                      ? 'Saving records an entry in this complaint’s history. The complainant sees it on their own tracking page, and is sent an SMS when you accept or resolve it.'
+                      : 'जतन केल्यास या तक्रारीच्या इतिहासात नोंद होते आणि ती तक्रारदाराला त्यांच्या पृष्ठावर दिसते. तक्रार स्वीकारल्यावर किंवा निकाली काढल्यावर त्यांना एसएमएस जातो.'}
                   </p>
                 </div>
+
+                {/* The two decisions an officer makes most, one click each. */}
+                {record.status !== 'Resolved' && (
+                  <div className="flex flex-wrap gap-2">
+                    {record.status === 'Pending' && (
+                      <button
+                        type="button"
+                        disabled={quick.saving || save.saving}
+                        onClick={() => quick.run('In Progress')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-govsaffron hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-all"
+                      >
+                        {quick.saving ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
+                        {isEnglish ? 'Accept complaint' : 'तक्रार स्वीकारा'}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      disabled={quick.saving || save.saving}
+                      onClick={() => quick.run('Resolved')}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-govgreen hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors"
+                    >
+                      {quick.saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                      {isEnglish ? 'Mark resolved' : 'निकाली काढा'}
+                    </button>
+                    <span className="text-[11px] text-slate-500 self-center flex items-center gap-1">
+                      <MessageSquare size={12} />
+                      {record.phone
+                        ? isEnglish
+                          ? `SMS to ${record.phone}`
+                          : `${record.phone} वर एसएमएस`
+                        : isEnglish
+                          ? 'No mobile number on this complaint — no SMS will be sent'
+                          : 'मोबाइल क्रमांक नाही — एसएमएस जाणार नाही'}
+                    </span>
+                  </div>
+                )}
+                {quick.error && <ErrorNotice message={quick.error} />}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -352,6 +424,14 @@ const DetailPanel: React.FC<{
                         : isEnglish
                           ? 'This will be added to the complaint history.'
                           : 'ही नोंद तक्रारीच्या इतिहासात जोडली जाईल.'}
+                      {changes.status && record.phone && smsFor(record.status, changes.status) && (
+                        <>
+                          {' '}
+                          {isEnglish
+                            ? `A ${smsFor(record.status, changes.status)!.en} SMS will be sent to the complainant.`
+                            : `तक्रारदाराला ${smsFor(record.status, changes.status)!.mr} असा एसएमएस जाईल.`}
+                        </>
+                      )}
                     </span>
                   </p>
                 )}
@@ -381,6 +461,12 @@ const DetailPanel: React.FC<{
                   </button>
                 </div>
               </section>
+
+              <SmsLog
+                notifications={record.smsNotifications ?? []}
+                isEnglish={isEnglish}
+                showErrors
+              />
 
               {/* Recorded history — the same events the resident reads. */}
               <section className="space-y-2">
@@ -443,6 +529,42 @@ const DetailPanel: React.FC<{
         </div>
       </div>
     </div>
+  );
+};
+
+// ─── Accept straight from the queue ─────────────────────────────────────────
+
+const AcceptButton: React.FC<{
+  grievanceId: string;
+  isEnglish: boolean;
+  onAccepted: () => void;
+}> = ({ grievanceId, isEnglish, onAccepted }) => {
+  const accept = useMutation(
+    () => api.grievances.update(grievanceId, { status: 'In Progress' }),
+    onAccepted,
+  );
+  return (
+    <span className="inline-flex items-center gap-2">
+      {accept.error && (
+        <span role="alert" className="text-[10px] font-bold text-rose-600">
+          {accept.error}
+        </span>
+      )}
+      <button
+        type="button"
+        disabled={accept.saving}
+        onClick={() => accept.run()}
+        title={
+          isEnglish
+            ? 'Accept and start work. The complainant is sent an SMS.'
+            : 'स्वीकारा व काम सुरू करा. तक्रारदाराला एसएमएस जाईल.'
+        }
+        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-govsaffron hover:brightness-95 disabled:opacity-60 text-white text-[11px] font-bold transition-all"
+      >
+        {accept.saving ? <Loader2 size={12} className="animate-spin" /> : <UserCheck size={12} />}
+        {isEnglish ? 'Accept' : 'स्वीकारा'}
+      </button>
+    </span>
   );
 };
 
@@ -592,14 +714,24 @@ const FilingModal: React.FC<{
 
             <div className="space-y-1.5">
               <label htmlFor="new-phone" className="block text-xs font-bold text-slate-600">
-                {isEnglish ? 'Phone' : 'दूरध्वनी'}
+                {isEnglish ? 'Complainant’s mobile' : 'तक्रारदाराचा मोबाइल'}
               </label>
               <input
                 id="new-phone"
+                type="tel"
+                inputMode="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-govnavy/25"
+                placeholder="98XXXXXXXX"
+                className={`w-full px-3 py-2 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-govnavy/25 ${
+                  phone.trim() && !isMobileNumber(phone) ? 'border-rose-300' : 'border-slate-200'
+                }`}
               />
+              <p className="text-[10px] text-slate-400 m-0">
+                {isEnglish
+                  ? 'Optional. They get SMS updates on it.'
+                  : 'ऐच्छिक. यावर एसएमएस सूचना जातील.'}
+              </p>
             </div>
           </div>
 
@@ -1009,6 +1141,10 @@ export const GrievanceManagement: React.FC = () => {
                   <span className="text-[10px] text-slate-400 font-semibold">
                     {isEnglish ? row.department : row.departmentMr}
                   </span>
+                  <span className="inline-flex items-center gap-3">
+                  {row.status === 'Pending' && (
+                    <AcceptButton grievanceId={row.id} isEnglish={isEnglish} onAccepted={refreshAll} />
+                  )}
                   <button
                     type="button"
                     onClick={() => setOpenId(row.id)}
@@ -1031,6 +1167,7 @@ export const GrievanceManagement: React.FC = () => {
                       </>
                     )}
                   </button>
+                  </span>
                 </div>
               </div>
             </article>

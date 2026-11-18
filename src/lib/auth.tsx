@@ -37,8 +37,9 @@ interface AuthState {
   /** True while restoring a session on first paint, so we don't flash the login screen. */
   initialising: boolean;
   error: string | null;
-  /** Resolves to a challenge when the device needs the owner's approval. */
-  signIn: (email: string, password: string) => Promise<LoginChallenge | null>;
+  /** Resolves to a challenge when the device needs the owner's approval.
+   *  `phone` is the mobile number complaint SMS will be sent to. */
+  signIn: (email: string, password: string, phone?: string) => Promise<LoginChallenge | null>;
   /** Finish signing in with tokens released by an approved challenge. */
   completeSignIn: (tokens: TokenPair) => Promise<void>;
   signOut: () => void;
@@ -96,11 +97,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => setSessionExpiredHandler(null);
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, phone?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.auth.login(email.trim(), password);
+      const result = await api.auth.login(email.trim(), password, phone);
       if (isChallenge(result)) return result;
       setTokens(result.accessToken, result.refreshToken);
       setUser(await api.auth.me());

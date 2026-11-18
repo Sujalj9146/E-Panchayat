@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '../lib/auth';
-import { api, ApiError, isAadhaar } from '../lib/api';
+import { api, ApiError, isAadhaar, isMobileNumber } from '../lib/api';
 import type { LoginChallenge, OtpSent, PublicVillage } from '../lib/api';
 
 /**
@@ -44,6 +44,24 @@ import type { LoginChallenge, OtpSent, PublicVillage } from '../lib/api';
  */
 type Mode = 'signin' | 'register' | 'recover';
 
+// The last mobile number signed in with on this browser, so it does not have
+// to be retyped every time. A convenience only: the server holds the real one.
+const PHONE_KEY = 'epanchayat_sms_phone';
+const readSavedPhone = (): string => {
+  try {
+    return localStorage.getItem(PHONE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+};
+const savePhone = (phone: string) => {
+  try {
+    localStorage.setItem(PHONE_KEY, phone);
+  } catch {
+    /* storage disabled: the number simply is not remembered */
+  }
+};
+
 const field =
   'w-full pl-9 pr-3 py-2 border border-slate-200 rounded text-slate-800 font-medium ' +
   'focus:outline-none focus:ring-2 focus:ring-govnavy/30';
@@ -55,6 +73,9 @@ export const Login: React.FC = () => {
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState('');
+  // Complaint SMS (registered / accepted / resolved) go to this number.
+  const [phone, setPhone] = useState<string>(readSavedPhone);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   // Registration form
   const [villages, setVillages] = useState<PublicVillage[]>([]);
@@ -182,8 +203,19 @@ export const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    clearError();
+    if (!isMobileNumber(phone)) {
+      setPhoneError(
+        isEnglish
+          ? 'Enter a valid 10-digit mobile number. Complaint updates are sent to it by SMS.'
+          : 'वैध १० अंकी मोबाइल क्रमांक टाका. तक्रारीची माहिती त्यावर एसएमएसने पाठवली जाते.',
+      );
+      return;
+    }
+    setPhoneError(null);
     try {
-      const pending = await signIn(email, password);
+      const pending = await signIn(email, password, phone.trim());
+      savePhone(phone.trim());
       if (pending) {
         setChallengeState('pending');
         setChallenge(pending);
@@ -205,6 +237,14 @@ export const Login: React.FC = () => {
       setFormError(t('auth.password_too_short'));
       return;
     }
+    if (!isMobileNumber(form.phone)) {
+      setFormError(
+        isEnglish
+          ? 'Enter a valid 10-digit mobile number. Complaint updates are sent to it by SMS.'
+          : 'वैध १० अंकी मोबाइल क्रमांक टाका. तक्रारीची माहिती त्यावर एसएमएसने पाठवली जाते.',
+      );
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -212,7 +252,7 @@ export const Login: React.FC = () => {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         password: form.password,
-        phone: form.phone.trim() || null,
+        phone: form.phone.trim(),
         villageId: form.villageId || null,
         claimedWard: form.claimedWard ? Number(form.claimedWard) : null,
         note: form.note.trim() || null,
@@ -416,6 +456,40 @@ export const Login: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label htmlFor="login-phone" className="block">
+                    {isEnglish ? 'Mobile number' : 'मोबाइल क्रमांक'}
+                  </label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-3 top-3 text-slate-400" />
+                    <input
+                      id="login-phone"
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      autoComplete="tel"
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setPhoneError(null);
+                      }}
+                      placeholder="98XXXXXXXX"
+                      aria-invalid={Boolean(phoneError)}
+                      aria-describedby="login-phone-help"
+                      className={`${field} ${phoneError ? 'border-rose-300' : ''}`}
+                    />
+                  </div>
+                  <p
+                    id="login-phone-help"
+                    className={`text-[10px] font-medium m-0 ${phoneError ? 'text-rose-600' : 'text-slate-400'}`}
+                  >
+                    {phoneError ??
+                      (isEnglish
+                        ? 'You will get an SMS here when your complaint is registered, accepted and resolved.'
+                        : 'तुमची तक्रार नोंदवली, स्वीकारली व निकाली निघाल्यावर या क्रमांकावर एसएमएस येईल.')}
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -497,8 +571,8 @@ export const Login: React.FC = () => {
                 <div className="p-3 rounded-lg bg-govblue-50 border border-govnavy/15 text-[11px] text-slate-600 leading-relaxed text-left">
                   {recoverBy === 'otp'
                     ? isEnglish
-                      ? 'Enter your email or Aadhaar number. We will send a 6-digit OTP to the mobile number and email registered with the Panchayat. After 5 failed sign-in attempts the account is locked, and you will need a reset code from the Panchayat office instead.'
-                      : 'तुमचा ईमेल किंवा आधार क्रमांक टाका. पंचायतीकडे नोंदवलेल्या मोबाइल व ईमेलवर ६ अंकी ओटीपी पाठवला जाईल. ५ वेळा चुकीचा प्रयत्न झाल्यास खाते लॉक होते; तेव्हा पंचायत कार्यालयातील रीसेट कोड लागेल.'
+                      ? 'Enter your email or Aadhaar number. We will send a 6-digit OTP by SMS to the mobile number registered with the Panchayat (or, if it has none, the one you signed in with). After 5 failed sign-in attempts the account is locked, and you will need a reset code from the Panchayat office instead.'
+                      : 'तुमचा ईमेल किंवा आधार क्रमांक टाका. पंचायतीकडे नोंदवलेल्या (किंवा साइन इन करताना दिलेल्या) मोबाइल क्रमांकावर ६ अंकी ओटीपी एसएमएसने पाठवला जाईल. ५ वेळा चुकीचा प्रयत्न झाल्यास खाते लॉक होते; तेव्हा पंचायत कार्यालयातील रीसेट कोड लागेल.'
                     : isEnglish
                       ? 'Locked accounts are recovered at the Gram Panchayat office: an officer verifies you against the village register and gives you a one-time reset code.'
                       : 'लॉक झालेली खाती ग्रामपंचायत कार्यालयात पुनर्प्राप्त होतात: अधिकारी ओळख पटवून एकवेळचा रीसेट कोड देतात.'}
@@ -514,9 +588,16 @@ export const Login: React.FC = () => {
                         ? `Valid for ${otpInfo.expiresInMinutes} minutes.`
                         : `${otpInfo.expiresInMinutes} मिनिटे वैध.`}
                     </p>
+                    {!otpInfo.sentTo.some((s) => s.startsWith('SMS')) && (
+                      <p className="m-0 mt-1.5 pt-1.5 border-t border-emerald-200 text-amber-800 font-semibold">
+                        {isEnglish
+                          ? 'There is no mobile number on record for this account, so no SMS was sent. Use "Code from office" instead.'
+                          : 'या खात्यावर मोबाइल क्रमांक नसल्याने एसएमएस पाठवला नाही. "कार्यालयातील कोड" वापरा.'}
+                      </p>
+                    )}
                     {otpInfo.demoOtp && (
                       <p className="m-0 mt-1.5 pt-1.5 border-t border-emerald-200">
-                        {isEnglish ? 'Demo mode (no SMS gateway yet): your OTP is ' : 'डेमो मोड: तुमचा ओटीपी '}
+                        {isEnglish ? 'Demo mode (SMS not actually sent): your OTP is ' : 'डेमो मोड: तुमचा ओटीपी '}
                         <span className="font-mono font-black tracking-widest text-sm">{otpInfo.demoOtp}</span>
                       </p>
                     )}
@@ -768,12 +849,16 @@ export const Login: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label htmlFor="reg-phone" className="block">
-                    {t('auth.phone')}
+                    {t('auth.phone')} *
                   </label>
                   <div className="relative">
                     <Phone size={14} className="absolute left-3 top-3 text-slate-400" />
                     <input
                       id="reg-phone"
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      autoComplete="tel"
                       value={form.phone}
                       onChange={set('phone')}
                       placeholder="98XXXXXXXX"
