@@ -23,6 +23,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
@@ -179,7 +180,10 @@ const DetailPanel: React.FC<{
     return () => window.clearTimeout(timer);
   }, [savedCount, refetch]);
 
-  return (
+  // Rendered on <body>: the page entry animation puts a transform on the
+  // content wrapper, which would otherwise trap this fixed overlay beneath
+  // the top bar and sidebar.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto"
       role="dialog"
@@ -528,7 +532,8 @@ const DetailPanel: React.FC<{
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
@@ -612,7 +617,10 @@ const FilingModal: React.FC<{
     }
   };
 
-  return (
+  // Rendered on <body>: the page entry animation puts a transform on the
+  // content wrapper, which would otherwise trap this fixed overlay beneath
+  // the top bar and sidebar.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 overflow-y-auto"
       role="dialog"
@@ -775,7 +783,8 @@ const FilingModal: React.FC<{
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
