@@ -259,3 +259,22 @@ def test_the_live_website_is_always_allowed_by_cors(client):
     })
     assert r.status_code == 200
     assert r.headers["access-control-allow-origin"] == "https://e-panchayat-ai.onrender.com"
+
+
+def test_twilio_accepts_an_api_key_instead_of_the_auth_token(monkeypatch):
+    monkeypatch.setattr(settings, "SMS_PROVIDER", "twilio")
+    monkeypatch.setattr(settings, "TWILIO_ACCOUNT_SID", "AC_test")
+    monkeypatch.setattr(settings, "TWILIO_AUTH_TOKEN", "")
+    monkeypatch.setattr(settings, "TWILIO_API_KEY_SID", "SK_test")
+    monkeypatch.setattr(settings, "TWILIO_API_KEY_SECRET", "key-secret")
+    monkeypatch.setattr(settings, "TWILIO_FROM_NUMBER", "+15005550006")
+    seen = {}
+
+    def fake_post(url, data=None, auth=None, **_):
+        seen.update(url=url, auth=auth)
+        return httpx.Response(201, json={"sid": "SM9"})
+
+    monkeypatch.setattr(sms.httpx, "post", fake_post)
+    assert sms.send_sms("+919876543210", "hi").status == "sent"
+    assert seen["auth"] == ("SK_test", "key-secret")
+    assert "/Accounts/AC_test/" in seen["url"]

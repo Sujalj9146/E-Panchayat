@@ -200,6 +200,10 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_FROM_NUMBER: str = ""
+    # Optional: an API key (SID starts SK) instead of the account Auth Token.
+    # TWILIO_ACCOUNT_SID (starts AC) is still required — it is in the URL.
+    TWILIO_API_KEY_SID: str = ""
+    TWILIO_API_KEY_SECRET: str = ""
     FAST2SMS_API_KEY: str = ""
 
     # CORS — comma separated in the environment

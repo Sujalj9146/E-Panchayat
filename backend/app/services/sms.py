@@ -171,18 +171,24 @@ def _send_console(to: str, body: str) -> SmsResult:
 
 
 def _send_twilio(to: str, body: str) -> SmsResult:
-    sid, token, sender = (
-        settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN, settings.TWILIO_FROM_NUMBER,
-    )
-    if not (sid and token and sender):
+    sid, sender = settings.TWILIO_ACCOUNT_SID, settings.TWILIO_FROM_NUMBER
+    # An API key (SK…) and its secret, or the account SID and Auth Token.
+    if settings.TWILIO_API_KEY_SID and settings.TWILIO_API_KEY_SECRET:
+        auth = (settings.TWILIO_API_KEY_SID, settings.TWILIO_API_KEY_SECRET)
+    else:
+        auth = (sid, settings.TWILIO_AUTH_TOKEN)
+    if not (sid and sid.startswith("AC") and all(auth) and sender):
         return SmsResult(
             status="failed", provider="twilio",
-            error="Twilio is selected but TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_FROM_NUMBER is empty.",
+            error=(
+                "Twilio needs TWILIO_ACCOUNT_SID (starts AC), TWILIO_FROM_NUMBER, and either "
+                "TWILIO_AUTH_TOKEN or TWILIO_API_KEY_SID + TWILIO_API_KEY_SECRET."
+            ),
         )
     resp = httpx.post(
         f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
         data={"To": to, "From": sender, "Body": body},
-        auth=(sid, token),
+        auth=auth,
         timeout=settings.SMS_TIMEOUT_SECONDS,
     )
     if resp.status_code in (200, 201):
